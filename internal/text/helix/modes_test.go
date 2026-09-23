@@ -341,7 +341,6 @@ func TestInsertModeKeys(t *testing.T) {
 		assert.Equal(t, "  ab", buf.String())
 	})
 
-
 	t.Run("the insert register records the session", func(t *testing.T) {
 		hx, _, clip := newHelix(t, "", term.Coordinates{})
 		send(t, hx, keys("iabc")...)
@@ -506,7 +505,7 @@ func TestUnboundBracketKeys(t *testing.T) {
 // TestUnboundNavigationKeys pins the goto-mode entries Helix reserves
 // for the language server and buffer list.
 func TestUnboundNavigationKeys(t *testing.T) {
-	for _, ch := range []rune{'d', 'D', 'y', 'r', 'i', 'a', 'm', 'n', 'p', 'f', 'w'} {
+	for _, ch := range []rune{'d', 'D', 'y', 'r', 'i', 'a', 'm', 'n', 'p', 'f'} {
 		hx, _, _ := newHelix(t, "foo bar", term.Coordinates{})
 		send(t, hx, key('g'))
 		_, handled := hx.Handle(key(ch))

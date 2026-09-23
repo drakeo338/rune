@@ -244,11 +244,11 @@ func TestWordMotions(t *testing.T) {
 		// ending itself. word_move still has to walk off it.
 		{name: "e from a blank line reaches the next word end",
 			content: "## Examples\n\n        <.flash />",
-			at: term.Coordinates{Y: 1}, evs: keys("e"),
+			at:      term.Coordinates{Y: 1}, evs: keys("e"),
 			wantAt: term.Coordinates{X: 9, Y: 2}, wantSel: "        <."},
 		{name: "w from a blank line reaches the next word start",
 			content: "## Examples\n\n        <.flash />",
-			at: term.Coordinates{Y: 1}, evs: keys("w"),
+			at:      term.Coordinates{Y: 1}, evs: keys("w"),
 			wantAt: term.Coordinates{X: 7, Y: 2}, wantSel: "        "},
 		{name: "e from a blank line between words", content: "a\n\nbb cc",
 			at: term.Coordinates{Y: 1}, evs: keys("e"),

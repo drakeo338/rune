@@ -46,6 +46,7 @@ const (
 	viewMode
 	replaceMode
 	bracketMode
+	jumpMode
 	searchMode // never stored in currMode, only reported by mode()
 )
 
@@ -150,6 +151,12 @@ type helixHandlerImpl struct {
 	jumps   []jumpEntry
 	jumpIdx int
 
+	// jumpLabels holds goto_word's live candidates while the two label
+	// keys are pending; jumpOuter is -1 until the first one lands.
+	jumpLabels []jumpRange
+	jumpOuter  int
+	jumpExtend bool
+
 	pendingSetCursor *term.Coordinates
 	setLocations     bool
 
@@ -185,6 +192,7 @@ func (h *helixHandlerImpl) init(buf *cell.Buffer, cfg helixConfig) {
 	h.jumpIdx = -1
 	h.anchor = h.cursorAtScroll()
 	h.setMode(normalMode)
+	h.jumpOuter = -1
 	h.resetCount()
 	// Helix always owns a selection, at minimum the cell under the
 	// caret, so every operator has something to act on.
@@ -211,6 +219,7 @@ func (h *helixHandlerImpl) initWithScroll(scroll *component.Scroll, opts ...Opti
 	h.jumpIdx = -1
 	h.anchor = h.cursorAtScroll()
 	h.setMode(normalMode)
+	h.jumpOuter = -1
 	h.resetCount()
 	h.anchorHere()
 }
@@ -261,6 +270,7 @@ func (h *helixHandlerImpl) Draw(w term.Writer) {
 	h.drawLocationMessage()
 	h.less.Draw(w)
 	text.DrawLocations(h.cursor.SortedLocations(), h.less.Scroll(), w)
+	h.drawJumpLabels(w)
 }
 
 // Cursor satisfies tui.Handler.
@@ -271,7 +281,7 @@ func (h *helixHandlerImpl) Cursor() (term.Coordinates, term.CursorStyle, bool) {
 		return h.less.Cursor()
 	case insertMode:
 		style = term.CursorStyleSteadyBar
-	case gotoMode, matchMode, viewMode, replaceMode, bracketMode:
+	case gotoMode, matchMode, viewMode, replaceMode, bracketMode, jumpMode:
 		style = term.CursorStyleSteadyUnderline
 	case normalMode:
 		style = term.CursorStyleDefault
@@ -310,6 +320,9 @@ func (h *helixHandlerImpl) setMode(mode helixMode) {
 	case bracketMode:
 		label = "BRACKET"
 		attrs = term.Attributes{Bg: term.ColorAqua, Fg: term.ColorBlack}
+	case jumpMode:
+		label = "  JUMP "
+		attrs = term.Attributes{Bg: term.ColorFuchsia, Fg: term.ColorBlack}
 	case searchMode:
 		label = " SEARCH"
 		attrs = term.Attributes{Bg: term.ColorSilver, Fg: term.ColorBlack}
@@ -332,6 +345,7 @@ func (h *helixHandlerImpl) setNormalMode() bool {
 	h.surroundMode = surroundNone
 	h.pendingRegister = false
 	h.pendingInsertRegister = false
+	h.clearJumpLabels()
 	h.setMode(normalMode)
 	return true
 }
@@ -614,6 +628,8 @@ func (h *helixHandlerImpl) Handle(ev term.Event) (quit, handled bool) {
 		return h.handleReplace(ev)
 	case bracketMode:
 		return h.handleBracket(ev)
+	case jumpMode:
+		return h.handleJump(ev)
 	default:
 		panic(fmt.Sprintf("unknown mode: %d", h.currMode))
 	}
@@ -1036,7 +1052,11 @@ func (h *helixHandlerImpl) handleGoto(ev term.Event) (quit, handled bool) {
 		return false, true
 	}
 	defer func() {
-		h.setMode(normalMode)
+		// goto_word takes over the mode to collect its label keys, so
+		// only an ordinary goto command falls back to normal mode.
+		if h.currMode == gotoMode {
+			h.setMode(normalMode)
+		}
 		h.resetCount()
 	}()
 
@@ -1081,6 +1101,8 @@ func (h *helixHandlerImpl) handleGoto(ev term.Event) (quit, handled bool) {
 				return h.cursor.MoveToNextLocation(lastChangeLocationListID)
 			})
 		})
+	case 'w':
+		return false, h.jumpToWord(h.extend)
 	}
 	return false, false
 }

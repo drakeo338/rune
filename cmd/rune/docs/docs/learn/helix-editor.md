@@ -141,11 +141,17 @@ target character.
 
 | Key | Action |
 | --- | --- |
+| `g w` | Label every visible word, then jump to the one whose two-character label you type |
 | `C-s` | Push the current selection onto the jumplist |
 | `C-o` / `C-i` or `<tab>` | Jump backward / forward |
 
 `G`, `g \|`, `g .` and a confirmed search push the position they left, so
 `C-o` walks back to it.
+
+`g w` only labels words of two or more word characters, and never the word the
+caret is already on. Labels are ordered outward from the caret, so the nearest
+targets get the shortest ones. Any key that is not part of a live label cancels.
+In select mode `g w` extends the selection to the label instead of replacing it.
 
 ## Scrolling
 
