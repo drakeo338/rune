@@ -240,6 +240,22 @@ func TestWordMotions(t *testing.T) {
 		{name: "b crosses a line ending", content: "foo\nbar",
 			at: term.Coordinates{Y: 1}, evs: keys("b"),
 			wantAt: term.Coordinates{}, wantSel: "foo"},
+		// A blank line has no cells, so the caret sits on the line
+		// ending itself. word_move still has to walk off it.
+		{name: "e from a blank line reaches the next word end",
+			content: "## Examples\n\n        <.flash />",
+			at: term.Coordinates{Y: 1}, evs: keys("e"),
+			wantAt: term.Coordinates{X: 9, Y: 2}, wantSel: "        <."},
+		{name: "w from a blank line reaches the next word start",
+			content: "## Examples\n\n        <.flash />",
+			at: term.Coordinates{Y: 1}, evs: keys("w"),
+			wantAt: term.Coordinates{X: 7, Y: 2}, wantSel: "        "},
+		{name: "e from a blank line between words", content: "a\n\nbb cc",
+			at: term.Coordinates{Y: 1}, evs: keys("e"),
+			wantAt: term.Coordinates{X: 1, Y: 2}, wantSel: "bb"},
+		{name: "b from a blank line reaches the previous word start",
+			content: "aa bb\n\ncc", at: term.Coordinates{Y: 1}, evs: keys("b"),
+			wantAt: term.Coordinates{X: 3, Y: 0}, wantSel: "bb"},
 	})
 }
 

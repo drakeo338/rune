@@ -159,6 +159,19 @@ func (h *helixHandlerImpl) prevPos(pos term.Coordinates) (term.Coordinates, bool
 	return term.Coordinates{X: h.less.Buffer().Columns(pos.Y - 1), Y: pos.Y - 1}, true
 }
 
+// docPos maps a row-local position onto document space. The cursor
+// reports a selection edge one column past the caret, which for a caret
+// on a line ending - and so for every caret on a blank row - lands past
+// the last position the row has. The equivalent document position is
+// the start of the next row.
+func (h *helixHandlerImpl) docPos(pos term.Coordinates) term.Coordinates {
+	buf := h.less.Buffer()
+	if pos.Y < 0 || pos.Y >= buf.Rows() || pos.X <= buf.Columns(pos.Y) {
+		return pos
+	}
+	return term.Coordinates{Y: pos.Y + 1}
+}
+
 // clampCell maps a document position back onto a real buffer cell, so
 // the line-ending slot and the end of the document resolve to the last
 // cell the caret can occupy.

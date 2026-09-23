@@ -195,9 +195,9 @@ func (h *helixHandlerImpl) helixRange() (anchor, head term.Coordinates) {
 		return caret, next
 	}
 	if h.selectionBackward() {
-		return to, from
+		return h.docPos(to), from
 	}
-	return from, to
+	return from, h.docPos(to)
 }
 
 // applyHelixRange installs a Helix (anchor, head) pair as the cursor's
