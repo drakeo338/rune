@@ -28,6 +28,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -46,6 +47,7 @@ import (
 	"google.golang.org/grpc/credentials/oauth"
 	"unstable.build/rune/auth"
 	"unstable.build/rune/internal/debug"
+	"unstable.build/rune/internal/keychain"
 )
 
 //go:embed callback_page.html
@@ -85,7 +87,9 @@ func New(
 	}
 	authStorage := storageapi.WithPartition(storage, "auth")
 	ret.storage = authStorage
-	ret.tokenSource = auth.NewCachedTokenSource(ret, authStorage)
+	tokenStorage := keychain.NewStore(
+		keychain.System(), keychainScope(dataDir), authStorage)
+	ret.tokenSource = auth.NewCachedTokenSource(ret, tokenStorage)
 	ret.ctx, ret.ctxCancel = context.WithCancel(context.Background())
 
 	if config.EnableTelemetry {
@@ -95,7 +99,7 @@ func New(
 			func(ctx context.Context, t *oauth2.Token) (oauth2.TokenSource, error) {
 				return ret.tokenSourceRefresh(ctx, t, true)
 			})
-		ret.telemetryTokenSource = auth.NewCachedTokenSource(refreshOnlySourcer, authStorage)
+		ret.telemetryTokenSource = auth.NewCachedTokenSource(refreshOnlySourcer, tokenStorage)
 		telemetryStorage := storageapi.WithPartition(storage, "telemetry")
 		ret.telemetry = newTelemetry(ret.telemetryTokenSource,
 			ret.httpEndpointURL, ret.config.TelemetryPeriod, debug.Tag,
@@ -104,6 +108,17 @@ func New(
 	}
 
 	return ret
+}
+
+// keychainScope names the data directory's items in the OS keychain.
+// Each data directory has its own sign-in, so two installations must
+// not share an item.
+func keychainScope(dataDir string) string {
+	abs, err := filepath.Abs(dataDir)
+	if err != nil {
+		return dataDir
+	}
+	return abs
 }
 
 // openBrowser launches the user's preferred browser and returns as soon
