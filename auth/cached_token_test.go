@@ -57,6 +57,28 @@ func TestTokenUnavailableNotLoggedAsError(t *testing.T) {
 	}
 }
 
+// The access token is a bearer credential, so it must never reach the
+// log, which a headless node also tees to stdout and its service
+// manager's journal.
+func TestInvalidTokenFromSourceDoesNotLogSecrets(t *testing.T) {
+	hook := logtest.NewGlobal()
+	defer hook.Reset()
+
+	sourcer, token := goodSourcerWithExpiry(-time.Hour)
+	source := NewCachedTokenSource(sourcer, storagestub.NewInMemoryService())
+
+	_, err := source.Token()
+	require.NoError(t, err)
+
+	require.NotEmpty(t, hook.AllEntries())
+	for _, entry := range hook.AllEntries() {
+		line, err := entry.String()
+		require.NoError(t, err)
+		assert.NotContains(t, line, token.AccessToken)
+		assert.NotContains(t, line, token.RefreshToken)
+	}
+}
+
 func TestCachedTokenToken(t *testing.T) {
 	t.Run("uses sourcer if no token is cached", func(t *testing.T) {
 		svc := storagestub.NewInMemoryService()

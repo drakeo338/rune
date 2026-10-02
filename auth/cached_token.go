@@ -275,7 +275,8 @@ func (l *CachedTokenSource) getToken(
 	}
 
 	if !l.token.Valid() {
-		log.Errorf("token returned by source is not valid: %s", l.token.AccessToken)
+		log.Errorf("token returned by source is not valid: expiry %s",
+			l.token.Expiry.Format(time.RFC3339))
 	}
 
 	return l.token, ctx.Err()
