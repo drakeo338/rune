@@ -162,7 +162,8 @@ rune --headless
 A machine serves its workspaces only while `rune --headless` runs. To
 start it at boot and keep it up, install it as a service: the
 [Headless](./headless.md) guide has recipes for systemd, launchd, OpenRC,
-runit, and Docker.
+and runit. On a host with Docker there is nothing to install: the
+[`unstablebuild/rune` image](./headless.md#docker) is a ready-made node.
 :::
 
 It needs no display and no graphical libraries, so it runs on a minimal
