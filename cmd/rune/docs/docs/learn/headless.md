@@ -57,6 +57,14 @@ You can skip the foreground run and let the service do it on its first
 start instead: the code shows up in its log, and the node joins once you
 have entered it.
 
+The sign-in is a serve-only one: the node can serve your other machines
+but not reach them (see [Headless machines only
+serve](./network.md#headless-machines-only-serve)). A sign-in with full
+account access is never kept. A node that finds one in its data
+directory, from a node set up before headless machines were serve-only
+or a data directory copied from a desktop install, says so, discards it,
+and prints a code to sign in again.
+
 **Give it a `PATH`.** A service manager starts Rune without your login
 shell, so `PATH` is whatever the service definition sets, not what your
 `.zshrc` exports. Toolchains that a `rune://` workspace should find on
@@ -353,8 +361,12 @@ service to register it again, which takes a slot back.
 **Signing in again.** The cached sign-in renews itself, so this is rare:
 it is needed after the account's access was revoked, or to move the
 machine to another account. Stop the service, run `rune --tui` on the
-host, and in the [console](./console.md) run `logout` and then `login`,
-which prints the URL to open. Quit and start the service again.
+host, and in the [console](./console.md) run `logout`. Quit, then run
+`rune --headless` in the foreground and enter the code it prints, as in
+[Before you install the service](#before-you-install-the-service).
+Start the service again. Signing in with `login` from `rune --tui`
+instead gives the host full account access, which a headless node
+discards on its next start.
 
 **Starting over.** Everything the node has accumulated lives in its data
 directory, `~/.rune` unless the service passes `-d`: the sign-in, the
@@ -396,6 +408,16 @@ node joins once the sign-in completes. A code expires after a few
 minutes; if it has, restart the service for a fresh one.
 
 **`the API server does not offer sign-in by code`.** The node is talking
-to a Rune API server too old to sign machines in by code. Sign in on the
-host with `rune --tui` and the console's `login` instead, then start the
-service.
+to a Rune API server too old to sign machines in by code, and a headless
+node has no other way to sign in. Point it at a current API server.
+
+**`the API server is too old to sign machines in as serve-only`** or
+**`did not issue a serve-only sign-in`.** The node is talking to a Rune
+API server older than serve-only machines. A headless node never runs
+with full account access, so it cannot start until it is pointed at a
+current API server.
+
+**`This machine holds a sign-in with full account access`.** The data
+directory came from a desktop install or from before headless machines
+were serve-only. The node has discarded that sign-in; enter the code it
+prints next.

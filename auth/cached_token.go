@@ -333,6 +333,7 @@ func newStoredToken(t *oauth2.Token) (ret storedToken) {
 	ret.Extra.ID, _ = extra["ID"].(string)
 	ret.Extra.Role, _ = extra["Role"].(Role)
 	ret.Extra.Account, _ = extra["Account"].(string)
+	ret.Extra.ServeOnly, _ = extra["serve_only"].(bool)
 	return ret
 }
 
@@ -354,6 +355,9 @@ func (t storedToken) oauth2() *oauth2.Token {
 	extra["ID"] = t.Extra.ID
 	extra["Role"] = t.Extra.Role
 	extra["Account"] = t.Extra.Account
+	if t.Extra.ServeOnly {
+		extra["serve_only"] = true
+	}
 	ret = ret.WithExtra(all)
 	return ret
 }

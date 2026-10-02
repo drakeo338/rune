@@ -286,6 +286,12 @@ type DeviceLoginSession struct {
 var ErrDeviceLoginUnsupported = errors.New(
 	"the API server does not offer sign-in by code")
 
+// ErrHeadlessLoginUnsupported is returned to a headless client by an
+// API server that predates serve-only machines: its oauth2
+// configuration names no headless client.
+var ErrHeadlessLoginUnsupported = errors.New(
+	"the API server is too old to sign machines in as serve-only")
+
 // LoginWithDeviceCode authenticates the user using the oauth2 device
 // authorization grant: no browser is opened and no local listener is
 // bound, so it works on machines the operator only reaches through a
@@ -383,6 +389,9 @@ type Machine struct {
 	Hostname string    `json:"hostname"`
 	LastSeen time.Time `json:"last_seen"`
 	Online   bool      `json:"online"`
+	// ServeOnly is set for a serve-only machine, a `rune --headless`
+	// node, which accepts the account's connections and opens none.
+	ServeOnly bool `json:"serve_only,omitempty"`
 }
 
 // NetworkCredentials asks the API for the coordination server this
@@ -608,6 +617,7 @@ func defaultProdNativeConfig(api *url.URL) auth.Config {
 	conf.SignupURL = "https://rune.build/signup"
 	conf.MgmtTokenURL = "https://rune-prod.us.auth0.com/oauth/token"
 	conf.ClientID = "XHBpJIm3q6PYazpxZMAhcwxAuR5Ks9B7"
+	conf.HeadlessClientID = "QymS9kE6odh2900n3RcEpdV95JQd09Sr"
 	conf.Endpoint.AuthURL = "https://auth.rune.build/authorize"
 	conf.Endpoint.DeviceAuthURL = "https://auth.rune.build/oauth/device/code"
 	return conf
@@ -627,6 +637,12 @@ func (a *Client) tokenSourceRefresh(ctx context.Context, token *oauth2.Token, re
 	if err != nil {
 		log.Warnf("could not fetch oauth2 configuration, fallback to builtin: %v", err)
 		conf = defaultProdNativeConfig(a.httpEndpointURL)
+	}
+	if a.config.Headless {
+		if conf.HeadlessClientID == "" {
+			return nil, ErrHeadlessLoginUnsupported
+		}
+		conf.ClientID = conf.HeadlessClientID
 	}
 	log.Infof("acquiring new oauth2 token source: "+
 		"http=%v grpc=%v config_url=%v "+

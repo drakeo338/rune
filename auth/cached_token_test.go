@@ -425,6 +425,41 @@ func TestConcurrentTokenAndPurge(t *testing.T) {
 	wg.Wait()
 }
 
+// A serve-only sign-in must still read as one after the token is
+// persisted and loaded back, whether the claims came from the token
+// endpoint's JSON or from a token this package built.
+func TestStoredTokenKeepsServeOnly(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		extra map[string]any
+		want  bool
+	}{
+		{"serve-only", map[string]any{"Email": "e", "serve_only": true}, true},
+		{"full access", map[string]any{"Email": "e"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := storagestub.NewInMemoryService()
+			tok := (&oauth2.Token{
+				AccessToken:  "1234",
+				RefreshToken: "refresh-1234",
+				Expiry:       time.Now().Add(time.Hour),
+			}).WithExtra(map[string]any{"extra": tc.extra})
+			require.NoError(t, svc.Set(context.Background(),
+				tokenDocumentID, newStoredToken(tok)))
+
+			got := NewCachedTokenSource(nil, svc).Cached(context.Background())
+			require.NotNil(t, got)
+			extra, _ := got.Extra("extra").(map[string]any)
+			serveOnly, _ := extra["serve_only"].(bool)
+			assert.Equal(t, tc.want, serveOnly)
+
+			extra, _ = cloneToken(got).Extra("extra").(map[string]any)
+			serveOnly, _ = extra["serve_only"].(bool)
+			assert.Equal(t, tc.want, serveOnly)
+		})
+	}
+}
+
 func TestCachedTokenCached(t *testing.T) {
 	t.Run("returns nil when nothing persisted and no in-memory token", func(t *testing.T) {
 		svc := storagestub.NewInMemoryService()

@@ -195,6 +195,24 @@ A headless node serves the network and nothing else, so it needs
 `network.auto_join` left on: with it off there is no console to run
 `network up` in, and Rune says so and exits.
 
+### Headless machines only serve
+
+A headless machine accepts connections from your other machines and
+opens none of its own. Your laptop can open `rune://buildbox/...`, but
+nothing on `buildbox` can reach your laptop, another headless machine, or
+any machine on another account. A server is the machine most likely to be
+exposed, so taking it over gives an attacker no way into the rest of
+your network or your account: its sign-in can only ever renew into
+another serve-only one, and copying its disk yields a machine that is
+still serve-only.
+
+`network machines` marks these machines:
+
+| machine | state | last seen |
+| --- | --- | --- |
+| carbon (this machine) | online | 2026-03-01 12:04 |
+| buildbox (serve-only) | online | 2026-03-01 12:03 |
+
 ## Configuration
 
 The network reads its settings from the `network` section of your
