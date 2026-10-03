@@ -374,10 +374,7 @@ func TestPkgInstallStartsExtensionWithPackageEnv(t *testing.T) {
 	require.NoError(t, m.addWorkspace(wsURI, true, false, -1))
 	m.quiesce()
 
-	h := pkgshell.New(pkgshell.Config{
-		Manager:       m.pkgmanager.pkg,
-		UpdateChecker: m.pkgmanager.uc,
-	})
+	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
 	_, err = h.HandleCommand(context.Background(), repl.Command{
 		Name: pkgshell.CommandName,
 		Args: []string{"install", pkgID},
@@ -472,10 +469,7 @@ func TestPkgInstallRegistersTutorialLive(t *testing.T) {
 	require.False(t, tutorialRegistered(i, mu, tutName),
 		"tutorial must not be registered before install")
 
-	h := pkgshell.New(pkgshell.Config{
-		Manager:       i.workspaceHandler.pkgmanager.pkg,
-		UpdateChecker: i.workspaceHandler.pkgmanager.uc,
-	})
+	h := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	mu.Lock()
 	_, err = h.HandleCommand(context.Background(), repl.Command{
 		Name: pkgshell.CommandName,
@@ -553,10 +547,7 @@ func TestPkgInstallMultipleTutorialsPromptsOnce(t *testing.T) {
 	require.Equal(t, 0, countFloatingWindows(i, mu),
 		"no prompt should be open before install")
 
-	h := pkgshell.New(pkgshell.Config{
-		Manager:       i.workspaceHandler.pkgmanager.pkg,
-		UpdateChecker: i.workspaceHandler.pkgmanager.uc,
-	})
+	h := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	mu.Lock()
 	_, err = h.HandleCommand(context.Background(), repl.Command{
 		Name: pkgshell.CommandName,
@@ -634,10 +625,7 @@ func TestPkgInstallTutorialDoesNotPromptDuringActiveTutorial(t *testing.T) {
 	}, 10*time.Second, 20*time.Millisecond,
 		"the basics tutorial should be running before install")
 
-	h := pkgshell.New(pkgshell.Config{
-		Manager:       i.workspaceHandler.pkgmanager.pkg,
-		UpdateChecker: i.workspaceHandler.pkgmanager.uc,
-	})
+	h := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	mu.Lock()
 	_, err = h.HandleCommand(context.Background(), repl.Command{
 		Name: pkgshell.CommandName,

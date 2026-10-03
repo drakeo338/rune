@@ -530,10 +530,7 @@ func TestSignedPackageTrustIntegration(t *testing.T) {
 	drainSchedule()
 	i.WaitWorkspaces()
 
-	packages := pkgshell.New(pkgshell.Config{
-		Manager:       i.workspaceHandler.pkgmanager.pkg,
-		UpdateChecker: i.workspaceHandler.pkgmanager.uc,
-	})
+	packages := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	install := func(pkgID string) error {
 		_, err := packages.HandleCommand(context.Background(), repl.Command{
 			Name: pkgshell.CommandName,
@@ -544,13 +541,13 @@ func TestSignedPackageTrustIntegration(t *testing.T) {
 
 	err = install(badPkgID)
 	require.ErrorContains(t, err, "verify package")
-	_, installed := i.workspaceHandler.pkgmanager.pkg.PackageVersionInUse(badPkgID)
+	_, installed := pkgVersionInUse(t, i.workspaceHandler.pkgmanager.pkg, badPkgID)
 	assert.False(t, installed)
 	_, err = os.Stat(filepath.Join(dataDir, "pkg", badPkgID, string(version)))
 	assert.True(t, os.IsNotExist(err), "bad signature package must not be installed: %v", err)
 
 	require.NoError(t, install(goodPkgID))
-	installedVersion, installed := i.workspaceHandler.pkgmanager.pkg.PackageVersionInUse(goodPkgID)
+	installedVersion, installed := pkgVersionInUse(t, i.workspaceHandler.pkgmanager.pkg, goodPkgID)
 	require.True(t, installed)
 	assert.Equal(t, version, installedVersion)
 	_, err = os.Stat(filepath.Join(dataDir, "pkg", goodPkgID,

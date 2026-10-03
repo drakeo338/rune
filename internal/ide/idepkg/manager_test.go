@@ -768,7 +768,7 @@ func TestPackageVersionInUse(t *testing.T) {
 		err := m.InstallPackageVersion(context.Background(), "go", "1", repl.NopProgressWriter())
 		require.NoError(t, err)
 
-		actual, ok := m.PackageVersionInUse("go")
+		actual, ok := versionInUse(t, m, "go")
 		require.True(t, ok)
 		assert.Equal(t, release.Version("1"), actual)
 	})
@@ -788,7 +788,7 @@ func TestPackageVersionInUse(t *testing.T) {
 		err = m.InstallPackageVersion(context.Background(), "go", "2", repl.NopProgressWriter())
 		require.NoError(t, err)
 
-		actual, ok := m.PackageVersionInUse("go")
+		actual, ok := versionInUse(t, m, "go")
 		require.True(t, ok)
 		assert.Equal(t, release.Version("2"), actual)
 	})
@@ -811,7 +811,7 @@ func TestPackageVersionInUse(t *testing.T) {
 		err = m.UsePackageVersion(context.Background(), "go", "1")
 		require.NoError(t, err)
 
-		actual, ok := m.PackageVersionInUse("go")
+		actual, ok := versionInUse(t, m, "go")
 		require.True(t, ok)
 		assert.Equal(t, release.Version("1"), actual)
 	})
@@ -822,7 +822,7 @@ func TestPackageVersionInUse(t *testing.T) {
 		versions := idepkgtest.MakeBundles([]release.Bundle{{Package: "go", Version: "1"}})
 		m, _, _, _ := newTestManager(t, pkgs, versions)
 
-		_, ok := m.PackageVersionInUse("go")
+		_, ok := versionInUse(t, m, "go")
 		require.False(t, ok)
 	})
 }
@@ -1287,6 +1287,13 @@ func newTestManager(
 		idepkgtest.TrustStore(),
 		fileScheme, temp, configPath, wm, syncTick, term.NopInterrupter())
 	return manager, n, m, temp
+}
+
+func versionInUse(t testing.TB, m PackageManager, pkgID string) (release.Version, bool) {
+	t.Helper()
+	version, ok, err := m.PackageVersionInUse(context.Background(), pkgID)
+	require.NoError(t, err)
+	return version, ok
 }
 
 type mockWindowManager struct {

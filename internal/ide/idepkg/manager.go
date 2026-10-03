@@ -668,20 +668,22 @@ func (m *Manager) UsePackageVersion(
 // never contacts the release server, so it is safe on offline/remote hosts and
 // always reflects the local source of truth. It returns false when the package
 // has no in-use version installed locally.
-func (m *Manager) PackageVersionInUse(pkgID string) (release.Version, bool) {
-	if validatePkgPath(pkgID) != nil {
-		return "", false
+func (m *Manager) PackageVersionInUse(
+	_ context.Context, pkgID string,
+) (release.Version, bool, error) {
+	if err := validatePkgPath(pkgID); err != nil {
+		return "", false, fmt.Errorf("package id: %w", err)
 	}
 	libDir := makePackageLibDirname(m.dataDir, pkgID)
 	target, err := os.Readlink(libDir)
 	if err != nil {
-		return "", false
+		return "", false, nil
 	}
 	version := filepath.Base(target)
 	if version == "" || version == "." || version == string(filepath.Separator) {
-		return "", false
+		return "", false, nil
 	}
-	return release.Version(version), true
+	return release.Version(version), true, nil
 }
 
 func (m *Manager) isPackageVersionInUse(
@@ -869,7 +871,11 @@ func (m *Manager) installRequirements(
 		if req == pkgID {
 			continue
 		}
-		if _, installed := m.PackageVersionInUse(req); installed {
+		_, installed, err := m.PackageVersionInUse(ctx, req)
+		if err != nil {
+			return fmt.Errorf("requirement %s in use: %w", req, err)
+		}
+		if installed {
 			continue
 		}
 		reqVersion, err := m.LatestVersion(ctx, req)

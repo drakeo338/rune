@@ -259,10 +259,7 @@ func runGitHubPkgE2E(t *testing.T, f ghE2EFixture) {
 	require.NoError(t, m.addWorkspace(wsURI, true, false, -1))
 	m.quiesce()
 
-	h := pkgshell.New(pkgshell.Config{
-		Manager:       m.pkgmanager.pkg,
-		UpdateChecker: m.pkgmanager.uc,
-	})
+	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
 	_, err = h.HandleCommand(context.Background(), repl.Command{
 		Name: pkgshell.CommandName,
 		Args: []string{"install", f.pkgID()},
@@ -273,10 +270,10 @@ func runGitHubPkgE2E(t *testing.T, f ghE2EFixture) {
 	_, err = os.Stat(filepath.Join(dataDir, "bin", f.toolBinaryName()))
 	require.NoError(t, err, "requirement install must deliver %s into bin/",
 		f.toolBinaryName())
-	_, reqOK := m.pkgmanager.pkg.PackageVersionInUse(f.requirement)
+	_, reqOK := pkgVersionInUse(t, m.pkgmanager.pkg, f.requirement)
 	require.True(t, reqOK, "requirement package %s must be installed", f.requirement)
 
-	version, ok := m.pkgmanager.pkg.PackageVersionInUse(f.pkgID())
+	version, ok := pkgVersionInUse(t, m.pkgmanager.pkg, f.pkgID())
 	require.True(t, ok, "github package must be installed")
 	require.Len(t, string(version), 12, "version must be the short commit sha")
 

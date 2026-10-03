@@ -45,7 +45,7 @@ var provisionTokenRe = regexp.MustCompile(`^[A-Za-z0-9._@,%+~/-]+$`)
 // BuildProvisionManifest needs, kept small so it can be faked in tests.
 type provisionManifestSource interface {
 	ListInstalledPackages(ctx context.Context) (iterator.Iterator[string], error)
-	PackageVersionInUse(pkgID string) (release.Version, bool)
+	PackageVersionInUse(ctx context.Context, pkgID string) (release.Version, bool, error)
 }
 
 // BuildProvisionManifest returns the in-use version of every installed
@@ -64,7 +64,10 @@ func BuildProvisionManifest(
 	}
 	var entries []ProvisionEntry
 	for _, id := range ids {
-		version, ok := pkg.PackageVersionInUse(id)
+		version, ok, err := pkg.PackageVersionInUse(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("package %s in use: %w", id, err)
+		}
 		if !ok {
 			continue
 		}

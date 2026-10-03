@@ -41,9 +41,11 @@ func (f fakeProvisionSource) ListInstalledPackages(
 	return iterator.FromSlice(f.installed), nil
 }
 
-func (f fakeProvisionSource) PackageVersionInUse(pkgID string) (release.Version, bool) {
+func (f fakeProvisionSource) PackageVersionInUse(
+	_ context.Context, pkgID string,
+) (release.Version, bool, error) {
 	v, ok := f.inUse[pkgID]
-	return release.Version(v), ok
+	return release.Version(v), ok, nil
 }
 
 func TestBuildProvisionManifest(t *testing.T) {
@@ -121,7 +123,7 @@ func TestPackageVersionInUseReadsLibSymlink(t *testing.T) {
 	dataDir := t.TempDir()
 	m := &Manager{dataDir: dataDir}
 
-	_, ok := m.PackageVersionInUse("rune-go")
+	_, ok := versionInUse(t, m, "rune-go")
 	require.False(t, ok, "no symlink yet")
 
 	require.NoError(t, os.MkdirAll(
@@ -132,7 +134,7 @@ func TestPackageVersionInUseReadsLibSymlink(t *testing.T) {
 		makePackageVersionDirname(dataDir, "rune-go", "1.2.3"),
 		makePackageLibDirname(dataDir, "rune-go")))
 
-	version, ok := m.PackageVersionInUse("rune-go")
+	version, ok := versionInUse(t, m, "rune-go")
 	require.True(t, ok)
 	require.Equal(t, release.Version("1.2.3"), version)
 }

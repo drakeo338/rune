@@ -118,7 +118,7 @@ var _ text.EventPublisher = (*workspaceManagerHandler)(nil)
 
 type workspaceManagerHandler struct {
 	mu         sync.Locker
-	pkgmanager *pkgManager
+	pkgmanager *localPkgManager
 	// gitRemoteURL, when non-nil, overrides how git package IDs map to
 	// git remote URLs. Production leaves it nil (clone from the host in
 	// the id); tests point it at a local fixture git server.
@@ -2419,10 +2419,7 @@ func (h *workspaceManagerHandler) buildExtensions(
 	}
 
 	// Register the top-level `pkg` REPL command for package management.
-	pkgHandler := pkgshell.New(pkgshell.Config{
-		Manager:       h.pkgmanager.pkg,
-		UpdateChecker: h.pkgmanager.uc,
-	})
+	pkgHandler := pkgshell.New(pkgshell.Config{Manager: h.pkgmanager.pkg})
 	if err := ex.editorObserver.RegisterREPLCommand(pkgshell.Manual(), pkgHandler); err != nil {
 		log.Errorf("register pkg repl command: %v", err)
 	}
@@ -3910,7 +3907,7 @@ func (h *workspaceManagerHandler) waitClosing() {
 func (h *workspaceManagerHandler) setReleaseManager(releaseManager release.Manager) {
 	notifications := h.notifications.current()
 	if h.pkgmanager == nil {
-		h.pkgmanager = new(pkgManager)
+		h.pkgmanager = new(localPkgManager)
 		defer func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
