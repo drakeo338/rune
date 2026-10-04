@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/unstablebuild/rune-go-sdk/api/config"
+	"github.com/unstablebuild/rune-go-sdk/api/schemeapi"
 	"github.com/unstablebuild/rune-go-sdk/api/workspaceapi"
 	"unstable.build/rune/internal/workspace/workspacessh"
 )
@@ -325,17 +326,15 @@ func chshUser(t *testing.T, id, user, shell string) {
 // stream opened — the server sends GOAWAY ENHANCE_YOUR_CALM /
 // too_many_pings and tears down the single HTTP/2 connection carried
 // over the SSH pipe. That kills the terminal stream (surfacing "context
-// canceled") and forces a reconnect that re-runs remote provisioning.
+// canceled") and forces a reconnect that starts a new remote server.
 //
 // We open a long-lived remote process to hold the stream, keep it idle
 // well past the strike threshold, then assert two things that only hold
 // once NewSchemeServer's enforcement permits the client cadence:
 //   - the stream did not die early: the process watcher reports no exit
 //     before we cancel it ourselves;
-//   - no reconnect occurred: WithProvisionManifest makes every
-//     connection emit exactly one opening provision Notify (see
-//     TestConnectSchemeProvisionAppliesGUIEnv), and that count is
-//     unchanged across the idle window.
+//   - no reconnect occurred: the remote server that runs our commands
+//     is the same process before and after the idle window.
 //
 // Before the fix this fails: the stream is torn down by GOAWAY around
 // 30-40s and maintainConnection re-dials. After the fix the ping
@@ -362,20 +361,12 @@ func TestIntegrationTerminalSurvivesKeepaliveIdle(t *testing.T) {
 		"insecure":     true,
 	})
 
-	// A non-empty manifest makes every connection re-run provisioning,
-	// which emits exactly one opening Notify per connection. That Notify
-	// count is our reconnect detector.
-	ui := &notifyRecordingUI{}
-	schemeFn := workspacessh.New(ui,
-		workspacessh.WithProvisionManifest(func() string {
-			return "pkg-a@1.0.0,pkg-b@2.0.0"
-		}))
-	scheme, err := schemeFn(context.Background(), cfg, uri)
+	scheme, err := workspacessh.New(errorUI{})(context.Background(), cfg, uri)
 	require.NoError(t, err)
 	defer scheme.Close()
 
-	// Drive the initial connect and settle the first provisioning burst
-	// before opening the long-lived stream we care about.
+	// Drive the initial connect before opening the long-lived stream we
+	// care about.
 	deadline := time.Now().Add(20 * time.Second)
 	var fi any
 	for time.Now().Before(deadline) {
@@ -388,9 +379,7 @@ func TestIntegrationTerminalSurvivesKeepaliveIdle(t *testing.T) {
 	require.NoError(t, err, "initial connect must complete the bootstrap")
 	require.NotNil(t, fi)
 
-	provisionsBefore := len(ui.messages())
-	require.GreaterOrEqual(t, provisionsBefore, 1,
-		"the first connection must have provisioned at least once")
+	serverBefore := remoteServerPID(t, scheme)
 
 	// Open a long-lived remote process. StartCommand is a server-
 	// streaming RPC, so this keeps a gRPC stream active with no data
@@ -432,8 +421,35 @@ func TestIntegrationTerminalSurvivesKeepaliveIdle(t *testing.T) {
 			"would have killed it")
 	require.NotNil(t, fi)
 
-	assert.Equal(t, provisionsBefore, len(ui.messages()),
+	assert.Equal(t, serverBefore, remoteServerPID(t, scheme),
 		"no reconnect must have occurred during the idle window: a new "+
-			"provisioning burst means the connection was torn down "+
+			"remote server means the connection was torn down "+
 			"(too_many_pings) and maintainConnection re-dialed")
+}
+
+// remoteServerPID returns the pid of the remote workspace server, which
+// is the parent of the commands it runs. Every connection starts a new
+// server.
+func remoteServerPID(t *testing.T, scheme schemeapi.Scheme) string {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
+	defer cancel()
+	var stdout bytes.Buffer
+	ch := make(chan error, 1)
+	_, err := scheme.StartCommand(ctx, workspaceapi.Cmd{
+		Path:    "sh",
+		Args:    []string{"-c", "echo $PPID"},
+		Stdout:  &stdout,
+		Watcher: workspaceapi.ChanProcessWatcher(ch),
+	})
+	require.NoError(t, err)
+	select {
+	case err := <-ch:
+		require.NoError(t, err)
+	case <-ctx.Done():
+		t.Fatalf("timed out reading the remote server pid")
+	}
+	pid := strings.TrimSpace(stdout.String())
+	require.NotEmpty(t, pid)
+	return pid
 }

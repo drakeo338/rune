@@ -218,16 +218,14 @@ func TestReportShellRCErr(t *testing.T) {
 		assert.Contains(t, n.notes[0].msg, "disk full")
 	})
 
-	// rune -x has no UI of its own: the local side turns its provisioning
-	// stream into notifications.
-	t.Run("streams a failure to the local side of rune -x", func(t *testing.T) {
+	// rune -x has no UI of its own: the local side shows its warnings.
+	t.Run("warns the local side of rune -x", func(t *testing.T) {
 		var stderr bytes.Buffer
 		reportRemoteShellRCErr(&stderr, err)
-		p, ok := workspacessh.ParseProvisionProgressLine(
+		msg, ok := workspacessh.ParseWarningLine(
 			bytes.TrimRight(stderr.Bytes(), "\n"))
-		require.True(t, ok, "not a provisioning line: %q", stderr.String())
-		assert.Equal(t, workspacessh.NotificationWarning, p.Level())
-		assert.Contains(t, p.Message(), "disk full")
+		require.True(t, ok, "not a warning line: %q", stderr.String())
+		assert.Contains(t, msg, "disk full")
 	})
 }
 

@@ -39,11 +39,12 @@ import (
 // changed it, so commands started afterwards see the package's
 // toolchain. The caller must Close the returned storage.
 func newHostPackageManager(
-	rootStorage storageapi.Service, scheme schemeapi.Scheme, applyEnv func(),
+	rootStorage storageapi.Service, releases release.Manager,
+	scheme schemeapi.Scheme, applyEnv func(),
 ) (*idepkg.Manager, storageapi.Service) {
 	trust := pkgtrust.NewStore(*flagDataPath, trustKeyringFetcher())
 	mgr, storage := idepkg.NewProvisioningManager(
-		rootStorage, newRemoteReleaseManager(), scheme,
+		rootStorage, releases, scheme,
 		*flagDataPath, *flagConfigPath, resolveRemoteEditorMode(),
 		defaultConfigTree, trust,
 		idepkg.WithAfterConfigMerge(func(

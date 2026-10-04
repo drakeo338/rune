@@ -410,7 +410,6 @@ func TestHostKeyTrustOnceReconnectReusesSessionPin(t *testing.T) {
 		"known_hosts":              khPath,
 		"strict_host_key_checking": true,
 		"timeout":                  "20s",
-		"provision_packages":       false,
 	})
 
 	ui := &recordingUI{choices: []int{1}}

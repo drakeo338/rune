@@ -25,7 +25,7 @@ import (
 	"unstable.build/rune/internal/handler/command"
 )
 
-// TestPkgEditorMode asserts the exported helper the remote provisioning server
+// TestPkgEditorMode asserts the exported helper a host's package manager
 // uses to resolve RUNE_EDITOR_MODE from a config.Config applies the same
 // normalization the editor uses: exo resolves to its fallback, the deprecated
 // modal and modeless map to vim and standard, and a missing/unset editor.mode

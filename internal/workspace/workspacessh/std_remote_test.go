@@ -397,15 +397,6 @@ type recordingUI struct {
 	choiceCancel bool  // when true PromptChoice returns context.Canceled
 	notifs       []string
 	levels       []NotificationLevel
-	progress     []progressUpdate
-}
-
-// progressUpdate records one UpdateNotificationProgress call.
-type progressUpdate struct {
-	id       string
-	message  string
-	progress int
-	total    int
 }
 
 func (u *recordingUI) PromptSecret(_ context.Context, label string) (string, error) {
@@ -447,27 +438,11 @@ func (u *recordingUI) PromptChoice(_ context.Context, label string, _ []string) 
 	return u.choice, nil
 }
 
-func (u *recordingUI) Notify(level NotificationLevel, msg string) string {
+func (u *recordingUI) Notify(level NotificationLevel, msg string) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	u.notifs = append(u.notifs, msg)
 	u.levels = append(u.levels, level)
-	return "noti-" + msg
-}
-
-func (u *recordingUI) UpdateNotificationProgress(id, message string, progress, total int) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	u.progress = append(u.progress, progressUpdate{
-		id: id, message: message, progress: progress, total: total,
-	})
-}
-
-// progressUpdates returns a copy of the recorded progress updates.
-func (u *recordingUI) progressUpdates() []progressUpdate {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	return slices.Clone(u.progress)
 }
 
 // notifications returns a copy of the recorded (level, message) notifications.

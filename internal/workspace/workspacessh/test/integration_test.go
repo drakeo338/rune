@@ -283,9 +283,7 @@ func (errorUI) PromptChoice(context.Context, string, []string) (int, error) {
 	return -1, fmt.Errorf("unexpected prompt: choice")
 }
 
-func (errorUI) Notify(workspacessh.NotificationLevel, string) string { return "" }
-
-func (errorUI) UpdateNotificationProgress(string, string, int, int) {}
+func (errorUI) Notify(workspacessh.NotificationLevel, string) {}
 
 // safeName returns a shell-safe version of name suitable for substitution
 // into a path the bootstrap may quote naively.

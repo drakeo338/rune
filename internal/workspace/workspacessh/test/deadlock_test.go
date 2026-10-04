@@ -141,6 +141,4 @@ func (u *eventLoopUI) PromptChoice(context.Context, string, []string) (int, erro
 	return -1, context.Canceled
 }
 
-func (u *eventLoopUI) Notify(workspacessh.NotificationLevel, string) string { return "" }
-
-func (u *eventLoopUI) UpdateNotificationProgress(string, string, int, int) {}
+func (u *eventLoopUI) Notify(workspacessh.NotificationLevel, string) {}

@@ -265,9 +265,7 @@ func (u *recordingUI) PromptChoice(_ context.Context, label string, _ []string) 
 	return -1, context.Canceled
 }
 
-func (u *recordingUI) Notify(workspacessh.NotificationLevel, string) string { return "" }
-
-func (u *recordingUI) UpdateNotificationProgress(string, string, int, int) {}
+func (u *recordingUI) Notify(workspacessh.NotificationLevel, string) {}
 
 // authScenario describes one row of the auth matrix from the plan.
 type authScenario struct {

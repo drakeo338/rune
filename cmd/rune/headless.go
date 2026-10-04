@@ -144,7 +144,7 @@ func serveHeadlessPackages(
 	}
 	applyUserConfigEnv()
 	pkgs, pkgStorage := newHostPackageManager(
-		rootStorage, scheme, applyUserConfigEnv)
+		rootStorage, newRemoteReleaseManager(), scheme, applyUserConfigEnv)
 	net.packages.set(pkgs)
 	return func() {
 		_ = pkgStorage.Close()

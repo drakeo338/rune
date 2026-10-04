@@ -95,7 +95,7 @@ func TestInstallPackageOverSSH(t *testing.T) {
 		"timeout":      "20s",
 		"insecure":     true,
 	})
-	scheme, err := workspacessh.New(&notifyRecordingUI{})(context.Background(), cfg, uri)
+	scheme, err := workspacessh.New(errorUI{})(context.Background(), cfg, uri)
 	require.NoError(t, err)
 	defer scheme.Close()
 
