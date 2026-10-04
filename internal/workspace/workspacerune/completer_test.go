@@ -74,14 +74,14 @@ func TestCompleterOffersPeers(t *testing.T) {
 		want []string
 	}{
 		{
-			name: "offers every peer once the scheme is typed",
+			name: "offers connected peers once the scheme is typed",
 			args: []string{"workspaceopen", "rune://"},
-			want: []string{"rune://laptop/", "rune://lab-box/", "rune://workstation/"},
+			want: []string{"rune://laptop/", "rune://workstation/"},
 		},
 		{
 			name: "filters by the typed peer prefix",
 			args: []string{"workspaceopen", "rune://la"},
-			want: []string{"rune://laptop/", "rune://lab-box/"},
+			want: []string{"rune://laptop/"},
 		},
 		{
 			name: "stays out of plain path completion",

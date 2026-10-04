@@ -130,8 +130,8 @@ workspaceopen rune://carbon/src/project
 The parts of the URL are:
 
 - `carbon` is the machine's name on the network, as shown by
-  `network peers`. Typing `rune://` at the `workspaceopen` prompt
-  completes it for you.
+  `network peers`. You rarely need to look it up: see
+  [Completing machines and directories](#completing-machines-and-directories).
 - `/src/project` is the directory to open on that machine. Any path you
   could open locally there works. Leave it out (`rune://carbon/`) to open
   that machine's home directory.
@@ -140,12 +140,33 @@ A `rune://` URL takes no user name: machines authenticate by their own
 identity, not by an account on the other end, so `rune://user@carbon/`
 is rejected.
 
-Offline machines are listed and completed too. Opening one waits and
+Offline machines are listed by `network peers`, and you can still type
+one out by hand. Opening it waits and
 connects as soon as it comes back, which is also what happens when a
 machine sleeps or changes networks mid-session: Rune reconnects on its
 own and the workspace carries on. Two failures are final rather than
 retried, because retrying cannot fix them: a machine that is not on the
 network at all, and one that belongs to a different account.
+
+### Completing machines and directories
+
+Typing `rune://` at the `workspaceopen` prompt lists the machines that
+are online right now, so jumping to another machine is a pick from the
+list:
+
+```
+workspaceopen rune://
+```
+
+Pick a machine and completion moves on to its directories, which Rune
+asks that machine for as you type, one level at a time.
+
+Once you have typed `rune://`, the list only ever shows what the network
+reports. Unlike other `workspaceopen` completion, it does not offer
+workspaces you opened before, since those machines may be offline now or
+the paths may never have existed. An empty list after `rune://` means no
+other machine is online. Check `network status` on this machine and
+`network peers` for the state of the others.
 
 ## Running a machine without the editor
 
@@ -303,6 +324,10 @@ keeps working locally but is off the network. If that was a mistake, run
 **A machine is missing from `network peers`.** Check that Rune is
 running on it, that `network status` there reports state `Running`, and
 that both machines are signed into the same account.
+
+**Completion after `rune://` is empty.** No other machine is online, or
+this machine is not on the network. Run `network status` to check this
+machine and `network peers` to see the state of the others.
 
 **`network status` prints an authorization URL.** The machine is waiting
 to be authorized. Open the URL in a browser and it finishes joining.

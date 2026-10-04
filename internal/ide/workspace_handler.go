@@ -213,9 +213,9 @@ type workspaceManagerHandler struct {
 	// workspaces alongside directory completion.
 	commandHistory command.HistoryAccessor
 
-	// workspaceOpenCompleters are scheme-provided completers appended to
-	// the built-in workspaceopen completion. See WithWorkspaceOpenCompleter.
-	workspaceOpenCompleters []command.Completer
+	// workspaceOpenCompleters are scheme-provided workspaceopen
+	// completers keyed by scheme. See WithWorkspaceOpenCompleter.
+	workspaceOpenCompleters map[string]command.Completer
 
 	union               handler.FrameUnion
 	bar                 handler.Tabs
@@ -3445,6 +3445,36 @@ func (h *workspaceManagerHandler) subscribeInternalCommands(
 	return ret
 }
 
+// withoutHistoryFallback yields a single blank candidate when it ends
+// without yielding anything, because the command prompt fills an empty
+// completion with past arguments, and past scheme URIs may name
+// workspaces that are unreachable or never existed. A listing error is
+// logged and treated as empty so it cannot trigger the fallback either.
+func withoutHistoryFallback(it iterator.Iterator[string]) iterator.Iterator[string] {
+	var yielded, done bool
+	return iterator.FromFunc(func(ctx context.Context) (string, bool, error) {
+		if done {
+			return "", false, nil
+		}
+		v, ok := it.Next(ctx)
+		if ok {
+			yielded = true
+			return v, true, nil
+		}
+		done = true
+		if err := it.Err(); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return "", false, err
+			}
+			log.Warnf("complete workspaces: %v", err)
+		}
+		if yielded {
+			return "", false, nil
+		}
+		return "", true, nil
+	}, it.Close)
+}
+
 func (h *workspaceManagerHandler) completeCommand(
 	ctx context.Context, cmd textapi.Command,
 ) (iterator.Iterator[string], string, error) {
@@ -3461,11 +3491,23 @@ func (h *workspaceManagerHandler) completeCommand(
 		// argument is a directory, and picking one must not stop the user
 		// from descending further.
 		argv := append([]string{cmd.Name}, cmd.Args...)
-		completers := append([]command.Completer{
+		if len(cmd.Args) > 0 {
+			last := cmd.Args[len(cmd.Args)-1]
+			if scheme, _, ok := strings.Cut(last, "://"); ok {
+				if c, ok := h.workspaceOpenCompleters[scheme]; ok {
+					it, newLast, err := c.Complete(ctx, argv)
+					if err != nil {
+						log.Warnf("complete %s workspaces: %v", scheme, err)
+						return withoutHistoryFallback(iterator.Empty[string]()), "", nil
+					}
+					return withoutHistoryFallback(it), newLast, nil
+				}
+			}
+		}
+		return command.MultiCompleter(
 			command.PartialCompleter(command.HistoryCompleter(h.commandHistory)),
 			command.NonRecursiveDirsCompleter(h.empty.workspace),
-		}, h.workspaceOpenCompleters...)
-		return command.MultiCompleter(completers...).Complete(ctx, argv)
+		).Complete(ctx, argv)
 	case cmdMoveWorkspace:
 		if len(cmd.Args) <= 1 {
 			options := []string{"left", "right", "1", "2",

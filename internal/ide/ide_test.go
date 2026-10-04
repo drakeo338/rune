@@ -22,6 +22,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -57,6 +58,7 @@ import (
 	sdkiterator "github.com/unstablebuild/rune-go-sdk/iterator"
 	"github.com/unstablebuild/rune-go-sdk/term"
 	"unstable.build/rune/internal/browser"
+	"unstable.build/rune/internal/cell"
 	"unstable.build/rune/internal/component/shader"
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/extension"
@@ -942,6 +944,219 @@ workspace:
 	nestedGot, err := iterator.ToSlice(t.Context(), nested)
 	require.NoError(t, err)
 	assert.Contains(t, nestedGot, "projects/nested/")
+}
+
+// TestWorkspaceOpenCompletionSchemeCompleterIsExclusive verifies that
+// once a registered scheme is typed, only that scheme's completer
+// answers: history would otherwise offer workspaces the scheme can no
+// longer reach.
+func TestWorkspaceOpenCompletionSchemeCompleterIsExclusive(t *testing.T) {
+	dataDir := t.TempDir()
+	repoA := t.TempDir()
+	repoB := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+
+	configPath := filepath.Join(dataDir, "rune.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`
+editor:
+  mode: modal
+command:
+  show_manual: false
+  key: ":"
+`), 0666))
+	repoBFile := filepath.Join(repoB, "seed.txt")
+	require.NoError(t, os.WriteFile(repoBFile, nil, 0666))
+
+	schemeCompleter := command.FuncCompleter(func(
+		context.Context, []string,
+	) (iterator.Iterator[string], string, error) {
+		return iterator.FromSlice([]string{"fake://online/"}), "", nil
+	})
+	mu := new(sync.Mutex)
+	i, err := New(repoB, configPath, dataDir, pkgtrust.NewStore(dataDir, nil), newTestStorage(t, dataDir),
+		WithPublishEvent(nopPublishEvent),
+		WithExtensionsRunner(FuncExtensionsRunner(testRunnerFn)),
+		WithLocker(mu),
+		WithWorkspaceOpenCompleter("fake", schemeCompleter),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = i.Close() })
+	root := i.Ready()
+
+	repoBURI, err := workspaceapi.CurrentUserHostURI(repoBFile)
+	require.NoError(t, err)
+	mu.Lock()
+	require.NoError(t, i.Open(repoBURI))
+	mu.Unlock()
+	wh := i.workspaceHandler
+
+	keys, err := term.ParseKeys(":workspaceopen<space>" + repoA + "<enter>")
+	require.NoError(t, err)
+	root.Resize(80, 24)
+	for _, k := range keys {
+		mu.Lock()
+		root.Handle(term.Event{Type: term.EventKey, Ch: k.Ch, Mod: k.Mod, Key: k.Key})
+		mu.Unlock()
+	}
+	wh.focusEx().Wait()
+
+	ex := wh.exHandler(wh.focusHandler())
+	require.NotNil(t, ex, "expected a focused ex handler after dispatch")
+
+	tsuite := []struct {
+		name string
+		last string
+		want []string
+	}{
+		{
+			name: "registered scheme answers alone",
+			last: "fake://",
+			want: []string{"fake://online/"},
+		},
+		{
+			name: "other arguments keep history",
+			last: "",
+			want: []string{repoA + "/"},
+		},
+	}
+	for _, tcase := range tsuite {
+		t.Run(tcase.name, func(t *testing.T) {
+			mu.Lock()
+			it, _, err := ex.comp.CompleteCommand(t.Context(),
+				textapi.Command{Name: "workspaceopen", Args: []string{tcase.last}})
+			mu.Unlock()
+			require.NoError(t, err)
+			defer func() { _ = it.Close() }()
+			got, err := iterator.ToSlice(t.Context(), it)
+			require.NoError(t, err)
+			if tcase.last == "" {
+				assert.Subset(t, got, tcase.want)
+				return
+			}
+			assert.Equal(t, tcase.want, got)
+		})
+	}
+}
+
+// TestWorkspaceOpenSchemeCompletionNeverFallsBackToHistory reproduces
+// the prompt listing past rune:// opens, which may name workspaces that
+// never existed, whenever the scheme completer had nothing to offer.
+func TestWorkspaceOpenSchemeCompletionNeverFallsBackToHistory(t *testing.T) {
+	dataDir := t.TempDir()
+	repo := t.TempDir()
+	t.Setenv("HOME", t.TempDir())
+
+	configPath := filepath.Join(dataDir, "rune.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`
+editor:
+  mode: modal
+command:
+  show_manual: false
+  key: ":"
+`), 0666))
+	repoFile := filepath.Join(repo, "seed.txt")
+	require.NoError(t, os.WriteFile(repoFile, nil, 0666))
+
+	var answer func() iterator.Iterator[string]
+	schemeCompleter := command.FuncCompleter(func(
+		context.Context, []string,
+	) (iterator.Iterator[string], string, error) {
+		return answer(), "", nil
+	})
+	mu := new(sync.Mutex)
+	i, err := New(repo, configPath, dataDir, pkgtrust.NewStore(dataDir, nil), newTestStorage(t, dataDir),
+		WithPublishEvent(nopPublishEvent),
+		WithExtensionsRunner(FuncExtensionsRunner(testRunnerFn)),
+		WithLocker(mu),
+		WithWorkspaceOpenCompleter("fake", schemeCompleter),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = i.Close() })
+	root := i.Ready()
+	root.Resize(80, 24)
+
+	repoURI, err := workspaceapi.CurrentUserHostURI(repoFile)
+	require.NoError(t, err)
+	mu.Lock()
+	require.NoError(t, i.Open(repoURI))
+	mu.Unlock()
+	wh := i.workspaceHandler
+
+	feed := func(t *testing.T, seq string) {
+		t.Helper()
+		keys, err := term.ParseKeys(seq)
+		require.NoError(t, err)
+		for _, k := range keys {
+			mu.Lock()
+			root.Handle(term.Event{Type: term.EventKey, Ch: k.Ch, Mod: k.Mod, Key: k.Key})
+			mu.Unlock()
+		}
+	}
+
+	// Submitting records the line in history even though no workspace
+	// exists there, which is how stale rune:// entries accumulate.
+	answer = func() iterator.Iterator[string] { return iterator.Empty[string]() }
+	feed(t, ":workspaceopen<space>fake://gone/old<enter>")
+	wh.focusEx().Wait()
+	ex := wh.exHandler(wh.focusHandler())
+	require.NotNil(t, ex, "expected a focused ex handler after dispatch")
+
+	tsuite := []struct {
+		name   string
+		answer func() iterator.Iterator[string]
+		want   string
+	}{
+		{
+			name:   "offers what the scheme completer finds",
+			answer: func() iterator.Iterator[string] { return iterator.FromSlice([]string{"fake://online/"}) },
+			want:   "fake://online/",
+		},
+		{
+			name:   "nothing found",
+			answer: func() iterator.Iterator[string] { return iterator.Empty[string]() },
+		},
+		{
+			name: "listing failed",
+			answer: func() iterator.Iterator[string] {
+				return iterator.FromFunc(func(context.Context) (string, bool, error) {
+					return "", false, errors.New("mesh unreachable")
+				}, func() error { return nil })
+			},
+		},
+	}
+	for _, tcase := range tsuite {
+		t.Run(tcase.name, func(t *testing.T) {
+			answer = tcase.answer
+			feed(t, ":workspaceopen<space>fake://")
+			mu.Lock()
+			prompt := ex.cmd
+			mu.Unlock()
+			require.NotNil(t, prompt, "expected the command prompt to be open")
+			prompt.Wait()
+
+			mu.Lock()
+			w := cell.NewBufferWriter(context.Background(), 80, 24)
+			prompt.Resize(80, 24)
+			prompt.Draw(w)
+			mu.Unlock()
+			var b strings.Builder
+			for _, row := range w.RawCells() {
+				for _, c := range row {
+					if c.Ch != 0 {
+						b.WriteRune(c.Ch)
+					}
+				}
+				b.WriteRune('\n')
+			}
+			screen := b.String()
+
+			assert.NotContains(t, screen, "fake://gone", "history must not be offered")
+			if tcase.want != "" {
+				assert.Contains(t, screen, tcase.want)
+			}
+			feed(t, "<esc>")
+		})
+	}
 }
 
 // TestRecentWorkspaceOpensReflectsPromptHistory asserts the exported

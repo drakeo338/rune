@@ -256,7 +256,8 @@ func serveNetworkWorkspaces(
 // open a modal — so unlike the scheme it needs no IDE and is wired at
 // IDE construction.
 func (n *network) completerOption() ide.Option {
-	return ide.WithWorkspaceOpenCompleter(workspacerune.Completer(gatedMesh{n}))
+	return ide.WithWorkspaceOpenCompleter(
+		workspacerune.Scheme, workspacerune.Completer(gatedMesh{n}))
 }
 
 // register wires the network into a live IDE: the rune:// workspace

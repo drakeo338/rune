@@ -181,13 +181,16 @@ func WithConfigFilename(filename string) Option {
 	}
 }
 
-// WithWorkspaceOpenCompleter adds a completer to the `workspaceopen`
-// command prompt, after the built-in history and directory completers.
-// Schemes registered with [WithScheme] use it to offer the workspaces
-// they can reach, which the built-in completers cannot enumerate.
-func WithWorkspaceOpenCompleter(c command.Completer) Option {
+// WithWorkspaceOpenCompleter makes c the sole `workspaceopen`
+// completer for arguments starting with "<scheme>://": history and
+// local directories would offer workspaces the scheme can no longer
+// reach. Registering the same scheme twice keeps the last completer.
+func WithWorkspaceOpenCompleter(scheme string, c command.Completer) Option {
 	return func(opts *options) {
-		opts.workspaceOpenCompleters = append(opts.workspaceOpenCompleters, c)
+		if opts.workspaceOpenCompleters == nil {
+			opts.workspaceOpenCompleters = make(map[string]command.Completer)
+		}
+		opts.workspaceOpenCompleters[scheme] = c
 	}
 }
 
@@ -521,7 +524,7 @@ type options struct {
 	streamingOpen        bool
 	disableSessionReopen bool
 
-	workspaceOpenCompleters []command.Completer
+	workspaceOpenCompleters map[string]command.Completer
 
 	defaultConfigModeModal bool
 	defaultConfigTUI       bool
