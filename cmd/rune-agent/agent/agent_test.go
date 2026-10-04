@@ -1953,6 +1953,123 @@ func TestAutoDiagnostics(t *testing.T) {
 		})
 }
 
+func TestAutoDiagnosticsSkipsFileCheckedLaterInBatch(t *testing.T) {
+	call := func(id, name, args string) llmapi.ToolCall {
+		return llmapi.ToolCall{
+			ID:       id,
+			Type:     llmapi.ToolTypeFunction,
+			Function: llmapi.FunctionCall{Name: name, Arguments: args},
+		}
+	}
+	patch := func(id string) llmapi.ToolCall { return call(id, "apply_patch", `{"patch":"p"}`) }
+	check := func(id, args string) llmapi.ToolCall { return call(id, "check_file_errors", args) }
+
+	tests := []struct {
+		name          string
+		calls         []llmapi.ToolCall
+		wantDiagExecs int32
+		wantAutoDiag  []string
+	}{
+		{
+			name: "session repro",
+			calls: []llmapi.ToolCall{
+				patch("p1"),
+				patch("p2"),
+				call("b1", "bash", `{"command":"go build ./..."}`),
+				check("k1", `{"path":"/workspace/main.go"}`),
+				check("k2", `{"path":"main.go"}`),
+				check("k3", `{"file_path":"./main.go"}`),
+			},
+			wantDiagExecs: 3,
+		},
+		{
+			name:          "relative file_path checked after patch",
+			calls:         []llmapi.ToolCall{patch("p1"), check("k1", `{"file_path":"./main.go"}`)},
+			wantDiagExecs: 1,
+		},
+		{
+			name:          "check before patch",
+			calls:         []llmapi.ToolCall{check("k1", `{"path":"main.go"}`), patch("p1")},
+			wantDiagExecs: 2,
+			wantAutoDiag:  []string{"auto-diag-p1"},
+		},
+		{
+			name: "patch between checks",
+			calls: []llmapi.ToolCall{
+				check("k1", `{"path":"main.go"}`),
+				patch("p1"),
+				check("k2", `{"path":"main.go"}`),
+			},
+			wantDiagExecs: 2,
+		},
+		{
+			name:          "different file checked",
+			calls:         []llmapi.ToolCall{patch("p1"), check("k1", `{"path":"other.go"}`)},
+			wantDiagExecs: 2,
+			wantAutoDiag:  []string{"auto-diag-p1"},
+		},
+		{
+			name:          "unparsable args",
+			calls:         []llmapi.ToolCall{patch("p1"), check("k1", `{bad`), check("k2", `{bad`)},
+			wantDiagExecs: 3,
+			wantAutoDiag:  []string{"auto-diag-p1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := &mockService{
+				responses: []mockResponse{toolCallsResponse(tt.calls...), stopResponse("done")},
+			}
+			patchTool := &mockTool{
+				name:       "apply_patch",
+				needsOrder: true,
+				result: ToolResult{
+					Content:      "applied 1/1 operations successfully",
+					TouchedFiles: []string{"/workspace/main.go"},
+				},
+			}
+			bashTool := &mockTool{name: "bash", needsOrder: true, result: ToolResult{Content: "ok"}}
+			diagTool := &mockTool{
+				name:   "check_file_errors",
+				result: ToolResult{Content: "no errors or warnings"},
+			}
+			ag := NewAgent(svc, NewRegistry(patchTool, bashTool, diagTool), noSkills(), newMockStore(), NoMemory(),
+				Config{SystemPrompt: "test", Workspace: dirURI("/workspace")})
+
+			events := collectEvents(t, ag.Run(context.Background(), "d", "go"))
+			require.True(t, hasEventType(events, EventDone))
+
+			assert.Equal(t, tt.wantDiagExecs, diagTool.execCount.Load())
+
+			var autoDiag []string
+			for _, ev := range eventsByType(events, EventToolResult) {
+				if strings.HasPrefix(ev.ToolCallID, "auto-diag-") {
+					autoDiag = append(autoDiag, ev.ToolCallID)
+				}
+			}
+			assert.ElementsMatch(t, tt.wantAutoDiag, autoDiag)
+
+			require.Equal(t, 2, svc.getCallCount())
+			toolMsgs := map[string][]llmapi.Message{}
+			for _, msg := range svc.requests[1].Messages {
+				if msg.Role == llmapi.RoleTool {
+					toolMsgs[msg.ToolCallID] = append(toolMsgs[msg.ToolCallID], msg)
+				}
+			}
+			for _, c := range tt.calls {
+				assert.Len(t, toolMsgs[c.ID], 1, "tool messages for %s", c.ID)
+			}
+			var gotAutoMsgs []string
+			for id := range toolMsgs {
+				if strings.HasPrefix(id, "auto-diag-") {
+					gotAutoMsgs = append(gotAutoMsgs, id)
+				}
+			}
+			assert.ElementsMatch(t, tt.wantAutoDiag, gotAutoMsgs)
+		})
+	}
+}
+
 func TestChannelIterator(t *testing.T) {
 	t.Run("Err returns nil when no errors", func(t *testing.T) {
 		ch := make(chan Event, 1)
@@ -3881,6 +3998,14 @@ func toolCallResponse(toolName, args, callID string) mockResponse {
 				Function: llmapi.FunctionCall{Name: toolName, Arguments: args},
 			},
 		},
+	}
+}
+
+func toolCallsResponse(calls ...llmapi.ToolCall) mockResponse {
+	return mockResponse{
+		chunks:       []string{""},
+		finishReason: llmapi.FinishReasonToolCall,
+		toolCalls:    calls,
 	}
 }
 
