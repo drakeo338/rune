@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/unstablebuild/blue/iterator"
 	"github.com/unstablebuild/rune-go-sdk/api/config"
+	"github.com/unstablebuild/rune-go-sdk/api/storageapi"
 	"github.com/unstablebuild/rune-go-sdk/api/storageapi/storagestub"
 	"github.com/unstablebuild/rune-go-sdk/api/workspaceapi"
 	"github.com/unstablebuild/rune-go-sdk/clipboard"
@@ -1390,9 +1391,18 @@ func TestConfigSetting(t *testing.T) {
 	statusBar := cfg.statusBarEnabled()
 	assert.True(t, statusBar)
 
-	statusBarCfg := cfg.statusBarConfig(workspaceapi.URI{}, nil, nil)
+	statusBarCfg := cfg.statusBarConfig(workspaceapi.URI{}, nil, nil, nil)
 	assert.NotNil(t, statusBarCfg.ScheduleNextTick)
 	statusBarCfg.ScheduleNextTick = nil
+	// Images are cached in a partition of their own.
+	require.NotNil(t, statusBarCfg.Storage)
+	require.NoError(t, statusBarCfg.Storage.Set(context.Background(), "image", map[string]any{"a": 1}))
+	images, err := cfg.storage.Partition("status_bar_images")
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, images.Get(context.Background(), "image", &doc))
+	assert.ErrorIs(t, cfg.storage.Get(context.Background(), "image", &doc), storageapi.ErrNotFound)
+	statusBarCfg.Storage = nil
 	assert.Equal(t, text.StatusBarConfig{
 		BackgroundColor: term.ColorMaroon,
 		Layout: []text.StatusBarComponent{

@@ -750,7 +750,7 @@ func (g *GUI) resize(width, height int, deviceScale float64) {
 	g.mouse.resize(cellsWidth, cellsHeight)
 	g.cellPixelSize.Store(uint64(math.Round(g.fontManager.PixelX(1)))<<32 |
 		uint64(math.Round(g.fontManager.PixelY(1))))
-	g.writer = newFrameWriter(g.ctx, cellsWidth, cellsHeight)
+	g.writer = newFrameWriter(g.ctx, cellsWidth, cellsHeight, g.fontManager)
 	if g.renderer != nil {
 		g.renderer.deallocate()
 	}

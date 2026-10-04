@@ -3251,17 +3251,26 @@ func (c ideConfig) iconsBarConfig(pub text.EventPublisher) text.IconsBarConfig {
 
 func (c ideConfig) statusBarConfig(
 	cwd workspaceapi.URI, pub text.EventPublisher, svc vctrl.Service,
+	interrupter term.Interrupter,
 ) text.StatusBarConfig {
-	return text.StatusBarConfig{
+	ret := text.StatusBarConfig{
 		Workspace:        cwd,
 		ScheduleNextTick: c.scheduleNextTick,
 		Publisher:        pub,
+		Interrupter:      interrupter,
 		BackgroundColor:  c.statusBarAttr("background_attr", term.Attributes{}).Bg,
 		ErrorColor:       c.statusBarAttr("foreground_error_attr", term.Attributes{}).Fg,
 		GitService:       svc,
 		Layout:           c.statusBarLayout(),
 	}
+	if c.storage != nil {
+		ret.Storage = storageapi.WithPartition(c.storage, statusBarImagesPartition)
+	}
+	return ret
 }
+
+// statusBarImagesPartition caches the images status bar layouts download.
+const statusBarImagesPartition = "status_bar_images"
 
 func (c ideConfig) auxiliaryBarFolds() bool {
 	cfg, ok := c.auxiliaryBar()

@@ -18,6 +18,9 @@ package handler
 
 import (
 	"context"
+	"image"
+	"image/color"
+	"image/draw"
 	"math"
 	"testing"
 	"time"
@@ -31,6 +34,7 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/tui"
 	"unstable.build/rune/internal/cell"
 	"unstable.build/rune/internal/component"
+	"unstable.build/rune/internal/component/asciiart"
 	"unstable.build/rune/internal/handler/handlertest"
 )
 
@@ -107,6 +111,241 @@ func TestWindowManagerDimmedWriter(t *testing.T) {
 		assert.Equal(t, term.NewRGBColor(lum, lum, lum), rec.cell.Fg)
 	})
 }
+
+// overflowHandler fills its window with its letter and draws img, or a
+// '?' at img.Pos when the writer cannot draw images.
+type overflowHandler struct {
+	*handler.TestHandler
+	img term.Image
+}
+
+func newOverflowHandler(ch rune, img term.Image) *overflowHandler {
+	h := handler.NewTestHandler()
+	h.Ch = ch
+	return &overflowHandler{TestHandler: h, img: img}
+}
+
+func (h *overflowHandler) Draw(w term.Writer) {
+	h.TestHandler.Draw(w)
+	if h.img.Src != nil && !w.DrawImage(h.img) {
+		w.SetCell(h.img.Pos, term.NewCell('?', 1, term.Attributes{}))
+	}
+}
+
+// TestWindowManagerOverflowingImages asserts what images that overflow
+// their window show of the windows around it. The images are solid and
+// stretched over their cells, so the cells each one shows are those with
+// its letter: a and 6 for two shades of grey.
+func TestWindowManagerOverflowingImages(t *testing.T) {
+	gray := func(y uint8) image.Image {
+		img := image.NewNRGBA(image.Rect(0, 0, 4, 4))
+		draw.Draw(img, img.Rect, image.NewUniform(color.Gray{Y: y}), image.Point{}, draw.Src)
+		return img
+	}
+	a, b := gray(128), gray(200)
+	place := func(src image.Image, x, y, width, height int) term.Image {
+		return term.Image{
+			Src: src, Pos: term.Coordinates{X: x, Y: y}, Width: width, Height: height,
+			Fit: term.ImageFitFill, Overflow: true,
+		}
+	}
+	inPlace := func(img term.Image) term.Image {
+		img.Overflow = false
+		return img
+	}
+	type floating struct {
+		offset term.Coordinates
+		img    term.Image
+	}
+
+	tests := []struct {
+		name string
+		// beside splits the windows side by side rather than stacking them.
+		beside bool
+		frame  bool
+		// a and b are drawn by the first and the second window.
+		a, b term.Image
+		// floating is drawn by a 4x2 floating window when set.
+		floating *floating
+		// dim draws the second window dimmed.
+		dim bool
+		// noImages draws with a writer that cannot draw images.
+		noImages bool
+		expected string
+	}{
+		{
+			name: "an image that does not overflow is cut off at its window",
+			a:    inPlace(place(a, 2, 1, 4, 4)),
+			expected: `
+AAAAAAAAAAAA
+AAaaaaAAAAAA
+AAaaaaAAAAAA
+BBBBBBBBBBBB
+BBBBBBBBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name: "an image overflows over the window below",
+			a:    place(a, 2, 1, 4, 4),
+			expected: `
+AAAAAAAAAAAA
+AAaaaaAAAAAA
+AAaaaaAAAAAA
+BBaaaaBBBBBB
+BBaaaaBBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name:   "an image overflows over the window to the right",
+			beside: true,
+			a:      place(a, 4, 1, 4, 2),
+			expected: `
+AAAAAABBBBBB
+AAAAaaaaBBBB
+AAAAaaaaBBBB
+AAAAAABBBBBB
+AAAAAABBBBBB
+AAAAAABBBBBB`,
+		},
+		{
+			name: "an image overflows over the window above",
+			b:    place(a, 2, -2, 4, 3),
+			expected: `
+AAAAAAAAAAAA
+AAaaaaAAAAAA
+AAaaaaAAAAAA
+BBaaaaBBBBBB
+BBBBBBBBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name: "an image is cut off at the edges of the window manager",
+			a:    place(a, -4, -4, 20, 20),
+			expected: `
+aaaaaaaaaaaa
+aaaaaaaaaaaa
+aaaaaaaaaaaa
+aaaaaaaaaaaa
+aaaaaaaaaaaa
+aaaaaaaaaaaa`,
+		},
+		{
+			name: "the image of the later window is on top",
+			a:    place(a, 2, 1, 4, 4),
+			b:    place(b, 4, -2, 4, 3),
+			expected: `
+AAAAAAAAAAAA
+AAaa6666AAAA
+AAaa6666AAAA
+BBaa6666BBBB
+BBaaaaBBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name:  "an image overflows over the frames around its window",
+			frame: true,
+			a:     place(a, 1, 1, 4, 4),
+			expected: `
+┌──────────┐
+│AAAAAAAAAA│
+└─aaaa─────┘
+┌─aaaa─────┐
+│BaaaaBBBBB│
+└─aaaa─────┘`,
+		},
+		{
+			name:     "a floating window covers an image that overflows a tile",
+			a:        place(a, 2, 1, 4, 4),
+			floating: &floating{offset: term.Coordinates{X: 3, Y: 3}},
+			expected: `
+AAAAAAAAAAAA
+AAaaaaAAAAAA
+AAaaaaAAAAAA
+BBaFFFFBBBBB
+BBaFFFFBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name: "an image overflows a floating window over the tiles",
+			floating: &floating{
+				offset: term.Coordinates{X: 3, Y: 3},
+				img:    place(b, -1, -2, 3, 2),
+			},
+			expected: `
+AAAAAAAAAAAA
+AA666AAAAAAA
+AA666AAAAAAA
+BBBFFFFBBBBB
+BBBFFFFBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name: "an image overflows over a dimmed window",
+			a:    place(a, 2, 1, 4, 4),
+			dim:  true,
+			expected: `
+AAAAAAAAAAAA
+AAaaaaAAAAAA
+AAaaaaAAAAAA
+BBaaaaBBBBBB
+BBaaaaBBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name: "an image of a dimmed window overflows",
+			b:    place(a, 2, -2, 4, 3),
+			dim:  true,
+			expected: `
+AAAAAAAAAAAA
+AAaaaaAAAAAA
+AAaaaaAAAAAA
+BBaaaaBBBBBB
+BBBBBBBBBBBB
+BBBBBBBBBBBB`,
+		},
+		{
+			name:     "a writer that cannot draw images reports it for an overflowing image",
+			a:        place(a, 2, 1, 4, 4),
+			noImages: true,
+			expected: `
+AAAAAAAAAAAA
+AA?AAAAAAAAA
+AAAAAAAAAAAA
+BBBBBBBBBBBB
+BBBBBBBBBBBB
+BBBBBBBBBBBB`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			const width, height = 12, 6
+			var w comptest.StringerWriter = asciiart.NewStringWriter(width, height, asciiart.DefaultConfig())
+			if tt.noImages {
+				w = term.NewStringWriter(width, height)
+			}
+			_, wm := prepareTest(width, height, tt.frame, newOverflowHandler('A', tt.a))
+			split := wm.SplitHorizontal
+			if tt.beside {
+				split = wm.SplitVertical
+			}
+			_, ok := split(wm.Focus(), newOverflowHandler('B', tt.b))
+			require.True(t, ok)
+			if tt.floating != nil {
+				wm.FloatingWindow(
+					handler.StaticFloating(newOverflowHandler('F', tt.floating.img), 4, 2),
+					component.FloatingConfig{Offset: tt.floating.offset},
+				)
+			}
+			wm.SetDim(tt.dim)
+			wm.SetFocus(wm.Focus())
+			comptest.TestComponent(t, wm, w, []comptest.TestCase{
+				{Expected: tt.expected},
+				{Expected: tt.expected},
+			})
+		})
+	}
+}
+
 func TestWindowManagerSetFocusNoFrame(t *testing.T) {
 	testWindowManagerSetFocus(t, false)
 }

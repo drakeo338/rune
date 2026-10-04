@@ -353,7 +353,7 @@ func (h *workspaceManagerHandler) newBuiltinModalEditor(
 ) text.Editor {
 	auxBarConfig := cfg.auxiliaryBarConfig(h, svc)
 	iconsBarConfig := cfg.iconsBarConfig(h)
-	statusBarConfig := cfg.statusBarConfig(cwd, h, svc)
+	statusBarConfig := cfg.statusBarConfig(cwd, h, svc, h.events.newInterrupter(cwd))
 	viOpts := append([]vi.Option{},
 		vi.WithResAttr(cfg.vimResultAttr()),
 		vi.WithBarAttr(cfg.vimMessageBarAttr()),
@@ -386,7 +386,7 @@ func (h *workspaceManagerHandler) newBuiltinHelixEditor(
 ) text.Editor {
 	auxBarConfig := cfg.auxiliaryBarConfig(h, svc)
 	iconsBarConfig := cfg.iconsBarConfig(h)
-	statusBarConfig := cfg.statusBarConfig(cwd, h, svc)
+	statusBarConfig := cfg.statusBarConfig(cwd, h, svc, h.events.newInterrupter(cwd))
 	return helix.Editor(
 		helix.WithResAttr(cfg.helixResultAttr()),
 		helix.WithBarAttr(cfg.helixMessageBarAttr()),
@@ -418,7 +418,7 @@ func (h *workspaceManagerHandler) newBuiltinStandardEditor(
 ) text.Editor {
 	auxBarConfig := cfg.auxiliaryBarConfig(h, svc)
 	iconsBarConfig := cfg.iconsBarConfig(h)
-	statusBarConfig := cfg.statusBarConfig(cwd, h, svc)
+	statusBarConfig := cfg.statusBarConfig(cwd, h, svc, h.events.newInterrupter(cwd))
 	return standard.Editor(
 		standard.WithCommandBar(true),
 		standard.WithSearchConfig(cfg.standardSearchConfig(
@@ -450,7 +450,7 @@ func (h *workspaceManagerHandler) newBuiltinEmacsEditor(
 ) text.Editor {
 	auxBarConfig := cfg.auxiliaryBarConfig(h, svc)
 	iconsBarConfig := cfg.iconsBarConfig(h)
-	statusBarConfig := cfg.statusBarConfig(cwd, h, svc)
+	statusBarConfig := cfg.statusBarConfig(cwd, h, svc, h.events.newInterrupter(cwd))
 	return emacs.Editor(
 		emacs.WithCommandBar(true),
 		emacs.WithResAttr(cfg.emacsResultAttr()),

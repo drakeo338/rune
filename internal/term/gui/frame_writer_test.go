@@ -76,7 +76,7 @@ func TestFrameWriterDrawImage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := newFrameWriter(context.Background(), 10, 5)
+			w := newFrameWriter(context.Background(), 10, 5, testFontManager(t))
 			assert.Equal(t, tt.want, w.DrawImage(tt.img))
 			require.Len(t, w.Images(), tt.wantLen)
 			if tt.wantLen > 0 {
@@ -90,7 +90,7 @@ func TestFrameWriterDrawImage(t *testing.T) {
 // single frame, so a picture that is no longer drawn disappears and
 // stops pinning its pixels.
 func TestFrameWriterClearDropsPlacements(t *testing.T) {
-	w := newFrameWriter(context.Background(), 10, 5)
+	w := newFrameWriter(context.Background(), 10, 5, testFontManager(t))
 	src := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	require.True(t, w.DrawImage(term.Image{
 		Src: src, ID: 1, Width: 2, Height: 2,
@@ -697,7 +697,7 @@ func BenchmarkFrameWriter(b *testing.B) {
 	for _, size := range sizes {
 		for _, scene := range scenes {
 			b.Run(size.name+"/"+scene.name, func(b *testing.B) {
-				w := newFrameWriter(context.Background(), size.width, size.height)
+				w := newFrameWriter(context.Background(), size.width, size.height, testFontManager(b))
 				screen := image.Rect(0, 0, size.width, size.height)
 				b.ReportAllocs()
 				for b.Loop() {
@@ -723,9 +723,10 @@ type frameScreen struct {
 }
 
 func newFrameScreen(t *testing.T, width, height int) *frameScreen {
+	fonts := testFontManager(t)
 	return &frameScreen{
-		frameWriter: newFrameWriter(context.Background(), width, height),
-		fonts:       testFontManager(t),
+		frameWriter: newFrameWriter(context.Background(), width, height, fonts),
+		fonts:       fonts,
 	}
 }
 
@@ -740,7 +741,7 @@ func (s *frameScreen) Flush() error {
 	}
 	bounds := cellRectToPixels(image.Rect(0, 0, s.width, s.height), s.fonts)
 	for _, img := range s.Images() {
-		p, ok := resolvePlacement(img, s.fonts, bounds)
+		p, ok := resolvePlacement(img, s.fonts, bounds, 0)
 		if !ok {
 			continue
 		}
