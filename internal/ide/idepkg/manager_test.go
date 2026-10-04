@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -1953,7 +1954,7 @@ func TestProcessConfigSequentialDistinctPackages(t *testing.T) {
 		cfgFile := pkgConfigFile(dir)
 		content := fmt.Sprintf("env:\n  KEY_%d: value_%d\n", i, i)
 		require.NoError(t, os.WriteFile(cfgFile, []byte(content), 0o644))
-		require.NoError(t, m.processConfig(
+		require.NoError(t, m.processConfig(context.Background(),
 			fmt.Sprintf("p%d", i), release.Version("1"), cfgFile))
 	}
 
@@ -2083,6 +2084,77 @@ func TestInstallConfigPromptDeny(t *testing.T) {
 		assert.Equal(t, "added", fmt.Sprint(settings["newkey"]),
 			"brand-new key is auto-applied even when the conflict prompt is denied")
 	})
+}
+
+// promptingUI records what an install asks and notifies through it.
+type promptingUI struct {
+	*idepkgtest.Notifications
+	mu      sync.Mutex
+	prompts []ConfigPrompt
+	answers []func(bool)
+}
+
+func (u *promptingUI) PromptConfig(p ConfigPrompt, answer func(bool)) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.prompts = append(u.prompts, p)
+	u.answers = append(u.answers, answer)
+}
+
+func notificationMessages(n *idepkgtest.Notifications) []string {
+	var msgs []string
+	for _, noti := range n.Active() {
+		msgs = append(msgs, noti.Msg)
+	}
+	sort.Strings(msgs)
+	return msgs
+}
+
+// TestInstallAsksTheUIOfItsContext installs on behalf of a user whose UI
+// is not the Manager's, as a host does for a user on another machine.
+func TestInstallAsksTheUIOfItsContext(t *testing.T) {
+	t.Parallel()
+	pkgs := idepkgtest.MakePackages()
+	versions := idepkgtest.MakeBundles([]release.Bundle{
+		{Package: "configpkg", Version: "2"},
+	})
+	m, n, _, datadir := newTestManager(t, pkgs, versions)
+	m.wm = &mockWindowManager{
+		floatingFn: func(browserapi.Floating, browserapi.FloatingConfig) (browserapi.Window, error) {
+			t.Error("the prompt must reach the user the install is for")
+			return &mockWindow{}, nil
+		},
+	}
+	configPath := filepath.Join(datadir, "config.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte("env:\n  GOROOT: /custom/go\n"), 0o644))
+	ui := &promptingUI{Notifications: idepkgtest.NewNotifications(t)}
+
+	err := m.InstallPackageVersion(WithUI(context.Background(), ui), "configpkg", "2",
+		repl.NopProgressWriter())
+	require.NoError(t, err)
+
+	require.Len(t, ui.prompts, 1)
+	assert.Contains(t, ui.prompts[0].Message, "GOROOT")
+	assert.Equal(t, []PromptOption{{Label: "Allow", Key: 'a'}, {Label: "Deny", Key: 'd'}},
+		ui.prompts[0].Options)
+	assert.Equal(t, []string{
+		"applied configpkg configuration updates. Restart the program to load the changes.",
+	}, notificationMessages(ui.Notifications), "the new settings are applied without asking")
+
+	// Another merge lands before the user answers; approving must not
+	// write back the config the prompt was planned against.
+	cfg, err := os.ReadFile(configPath)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(configPath, append(cfg, "other: kept\n"...), 0o644))
+	ui.answers[0](true)
+
+	merged := readUserConfigMap(t, configPath)
+	assert.Equal(t, filepath.Join(datadir, "pkg", "configpkg", "2", "go"),
+		merged["env"].(map[string]any)["GOROOT"])
+	assert.Equal(t, "added", fmt.Sprint(merged["settings"].(map[string]any)["newkey"]))
+	assert.Equal(t, "kept", merged["other"])
+	assert.Len(t, notificationMessages(ui.Notifications), 2)
+	assert.Empty(t, n.Active(), "nothing is shown to the Manager's own user")
 }
 
 func TestInstallConfigPreservesUserValues(t *testing.T) {
@@ -2850,7 +2922,7 @@ func TestProcessConfigAutoApply(t *testing.T) {
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(
 			"settings:\n  theme: dark\n  indent: 4\n"), 0o644))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		n.RequireNoErrorNotification()
 		assert.True(t, hasInfoNotification(n),
 			"auto-apply must surface an info notification")
@@ -2905,7 +2977,7 @@ func TestProcessConfigAutoApply(t *testing.T) {
 		assert.Contains(t, string(promptYAML), "GOROOT",
 			"prompt covers only the conflicting key")
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("2"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("2"), pkgConfig))
 		n.RequireNoErrorNotification()
 		assert.True(t, prompted, "conflicting key must prompt")
 
@@ -2945,7 +3017,7 @@ func TestProcessConfigAutoApply(t *testing.T) {
 			"env:\n  GOROOT: $RUNE_DATADIR/pkg/$RUNE_PKG_ID/$RUNE_PKG_VERSION/go\n"+
 				"  NEW: added\n"), 0o644))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("2"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("2"), pkgConfig))
 		n.RequireNoErrorNotification()
 		assert.Equal(t, 1, promptCount, "conflicting key prompts")
 		assert.True(t, hasInfoNotification(n),
@@ -2979,7 +3051,7 @@ func TestProcessConfigAutoApply(t *testing.T) {
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(
 			"settings:\n  theme: dark\n"), 0o644))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		n.RequireNoErrorNotification()
 		assert.False(t, hasInfoNotification(n),
 			"no notification when nothing changed")
@@ -3057,7 +3129,7 @@ func TestProcessConfigRepromptsOnVersionDependentChange(t *testing.T) {
 		}
 
 		// v1: new key auto-applies without a prompt and the value is written.
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		assert.Equal(t, 0, promptCount, "first install auto-applies the new key without prompting")
 
 		v1Want := filepath.Join(datadir, "pkg", "vpkg", "1", "go")
@@ -3067,7 +3139,7 @@ func TestProcessConfigRepromptsOnVersionDependentChange(t *testing.T) {
 		assert.Equal(t, v1Want, fmt.Sprint(env["GOROOT"]))
 
 		// v2: same template, different resolved value -> must re-prompt and update.
-		require.NoError(t, m.processConfig("vpkg", release.Version("2"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("2"), pkgConfig))
 		assert.Equal(t, 1, promptCount, "version bump re-prompts the version-dependent key")
 
 		v2Want := filepath.Join(datadir, "pkg", "vpkg", "2", "go")
@@ -3103,11 +3175,11 @@ func TestProcessConfigRepromptsOnVersionDependentChange(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		assert.Equal(t, 0, promptCount, "first install auto-applies the new key without prompting")
 
 		// Same version again: resolved value matches disk, no re-prompt.
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		assert.Equal(t, 0, promptCount, "unchanged version-dependent value must not re-prompt")
 	})
 
@@ -3140,7 +3212,7 @@ func TestProcessConfigRepromptsOnVersionDependentChange(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		assert.Equal(t, 0, promptCount, "static differing scalar must not re-prompt (RUNE-187)")
 
 		cfg := readUserConfigMap(t, m.configPath)
@@ -4128,7 +4200,7 @@ func TestConfigMergeIntegration(t *testing.T) {
 				pkgConfig := filepath.Join(pkgDir, tc.configName)
 				require.NoError(t, os.WriteFile(pkgConfig, []byte(step.pkgConfig), 0o644))
 
-				require.NoError(t, m.processConfig("mpkg", release.Version(step.version), pkgConfig),
+				require.NoError(t, m.processConfig(context.Background(), "mpkg", release.Version(step.version), pkgConfig),
 					"step %d", i)
 				n.RequireNoErrorNotification()
 
@@ -4190,13 +4262,13 @@ func TestConfigMergeIntegration(t *testing.T) {
 		src := "config = {\"env\": {\"GOROOT\": RUNE_DATADIR + \"/pkg/\" + RUNE_PKG_ID + \"/\" + RUNE_PKG_VERSION + \"/go\"}}\n"
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(src), 0o644))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		assert.Equal(t, 0, promptCount, "first install auto-applies the new key without prompting")
 		cfg := readUserConfigMap(t, m.configPath)
 		env := cfg["env"].(map[string]any)
 		assert.Equal(t, filepath.Join(datadir, "pkg", "vpkg", "1", "go"), fmt.Sprint(env["GOROOT"]))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("2"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("2"), pkgConfig))
 		assert.Equal(t, 1, promptCount, "version bump re-prompts the version-dependent key")
 		cfg = readUserConfigMap(t, m.configPath)
 		env = cfg["env"].(map[string]any)
@@ -4232,8 +4304,8 @@ func TestConfigMergeIntegration(t *testing.T) {
 		src := "config = {\"env\": {\"GOROOT\": RUNE_DATADIR + \"/pkg/\" + RUNE_PKG_ID + \"/\" + RUNE_PKG_VERSION + \"/go\"}}\n"
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(src), 0o644))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		assert.Equal(t, 0, promptCount, "unchanged version-dependent value must not re-prompt")
 	})
 }
@@ -4261,7 +4333,7 @@ func TestAfterConfigMergeHook(t *testing.T) {
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(
 			"gui:\n  env:\n    FOO: bar\n"), 0o644))
 
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 		n.RequireNoErrorNotification()
 
 		require.Len(t, events, 1)
@@ -4285,7 +4357,7 @@ func TestAfterConfigMergeHook(t *testing.T) {
 		pkgConfig := filepath.Join(t.TempDir(), "config.yaml")
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(
 			"gui:\n  env:\n    FOO: bar\n"), 0o644))
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 
 		require.True(t, hasNotificationContaining(n, "applied vpkg configuration updates"))
 		assert.False(t, hasNotificationContaining(n, "Restart the program"))
@@ -4304,7 +4376,7 @@ func TestAfterConfigMergeHook(t *testing.T) {
 		pkgConfig := filepath.Join(t.TempDir(), "config.yaml")
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(
 			"settings:\n  theme: dark\n"), 0o644))
-		require.NoError(t, m.processConfig("vpkg", release.Version("1"), pkgConfig))
+		require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig))
 
 		require.True(t, hasNotificationContaining(n, "Restart the program"))
 	})
@@ -4322,7 +4394,7 @@ func TestAfterConfigMergeHook(t *testing.T) {
 		pkgConfig := filepath.Join(t.TempDir(), "config.yaml")
 		require.NoError(t, os.WriteFile(pkgConfig, []byte(
 			"gui:\n  env:\n    FOO: bar\n"), 0o644))
-		err := m.processConfig("vpkg", release.Version("1"), pkgConfig)
+		err := m.processConfig(context.Background(), "vpkg", release.Version("1"), pkgConfig)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "boom")
 	})
@@ -4360,7 +4432,7 @@ func TestAfterConfigMergeHook(t *testing.T) {
 			pkgConfig := filepath.Join(t.TempDir(), "config.yaml")
 			require.NoError(t, os.WriteFile(pkgConfig, []byte(
 				"env:\n  GOROOT: $RUNE_DATADIR/pkg/$RUNE_PKG_ID/$RUNE_PKG_VERSION/go\n"), 0o644))
-			require.NoError(t, m.processConfig("vpkg", release.Version("2"), pkgConfig))
+			require.NoError(t, m.processConfig(context.Background(), "vpkg", release.Version("2"), pkgConfig))
 			n.RequireNoErrorNotification()
 			return calls
 		}
