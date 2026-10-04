@@ -116,6 +116,7 @@ type remote interface {
 }
 
 var _ workspace.RemoteScheme = (*scheme)(nil)
+var _ workspace.PackageHost = (*scheme)(nil)
 
 type scheme struct {
 	cfg      sshConfig
@@ -539,8 +540,18 @@ func (s *scheme) connectScheme(
 		}
 	})
 
-	return workspacerpc.NewClient(s.ctx, conn), nil
+	return connScheme{Scheme: workspacerpc.NewClient(s.ctx, conn), conn: conn}, nil
 }
+
+// connScheme exposes the gRPC connection the workspace client runs
+// on, so the host's other services are reached over the same pipe.
+// The client owns the connection.
+type connScheme struct {
+	schemeapi.Scheme
+	conn *grpc.ClientConn
+}
+
+func (c connScheme) Conn() grpc.ClientConnInterface { return c.conn }
 
 // scanRemoteStderr reads the remote server's stderr line by line until EOF.
 // Structured provisioning progress lines drive a single live progress
@@ -802,6 +813,12 @@ func (s *scheme) OnDisconnect() <-chan struct{} {
 
 func (s *scheme) WaitConnected(ctx context.Context) error {
 	return s.Scheme.(workspace.RemoteScheme).WaitConnected(ctx)
+}
+
+// HostConn reaches the host's other services over the workspace
+// connection, following its reconnects.
+func (s *scheme) HostConn() (grpc.ClientConnInterface, bool) {
+	return s.Scheme.(workspace.PackageHost).HostConn()
 }
 
 func (s *scheme) expandPath(path string) (string, error) {

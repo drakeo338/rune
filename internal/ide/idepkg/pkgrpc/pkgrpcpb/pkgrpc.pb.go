@@ -18,9 +18,9 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.4
-// source: pkgrpc/pkgrpc.proto
+// source: pkgrpcpb/pkgrpc.proto
 
-package pkgrpc
+package pkgrpcpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -95,11 +95,11 @@ func (x PackageError_Kind) String() string {
 }
 
 func (PackageError_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_pkgrpc_pkgrpc_proto_enumTypes[0].Descriptor()
+	return file_pkgrpcpb_pkgrpc_proto_enumTypes[0].Descriptor()
 }
 
 func (PackageError_Kind) Type() protoreflect.EnumType {
-	return &file_pkgrpc_pkgrpc_proto_enumTypes[0]
+	return &file_pkgrpcpb_pkgrpc_proto_enumTypes[0]
 }
 
 func (x PackageError_Kind) Number() protoreflect.EnumNumber {
@@ -108,7 +108,7 @@ func (x PackageError_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PackageError_Kind.Descriptor instead.
 func (PackageError_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{18, 0}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{18, 0}
 }
 
 type Empty struct {
@@ -119,7 +119,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[0]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +131,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[0]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +144,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{0}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{0}
 }
 
 type PackageRef struct {
@@ -156,7 +156,7 @@ type PackageRef struct {
 
 func (x *PackageRef) Reset() {
 	*x = PackageRef{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[1]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +168,7 @@ func (x *PackageRef) String() string {
 func (*PackageRef) ProtoMessage() {}
 
 func (x *PackageRef) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[1]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +181,7 @@ func (x *PackageRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageRef.ProtoReflect.Descriptor instead.
 func (*PackageRef) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{1}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PackageRef) GetPackage() string {
@@ -201,7 +201,7 @@ type PackageVersion struct {
 
 func (x *PackageVersion) Reset() {
 	*x = PackageVersion{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[2]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -213,7 +213,7 @@ func (x *PackageVersion) String() string {
 func (*PackageVersion) ProtoMessage() {}
 
 func (x *PackageVersion) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[2]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -226,7 +226,7 @@ func (x *PackageVersion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageVersion.ProtoReflect.Descriptor instead.
 func (*PackageVersion) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{2}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PackageVersion) GetPackage() string {
@@ -252,7 +252,7 @@ type Filters struct {
 
 func (x *Filters) Reset() {
 	*x = Filters{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[3]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +264,7 @@ func (x *Filters) String() string {
 func (*Filters) ProtoMessage() {}
 
 func (x *Filters) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[3]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +277,7 @@ func (x *Filters) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Filters.ProtoReflect.Descriptor instead.
 func (*Filters) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{3}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Filters) GetFilters() map[string]string {
@@ -297,7 +297,7 @@ type PackageFilters struct {
 
 func (x *PackageFilters) Reset() {
 	*x = PackageFilters{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[4]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -309,7 +309,7 @@ func (x *PackageFilters) String() string {
 func (*PackageFilters) ProtoMessage() {}
 
 func (x *PackageFilters) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[4]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -322,7 +322,7 @@ func (x *PackageFilters) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageFilters.ProtoReflect.Descriptor instead.
 func (*PackageFilters) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{4}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PackageFilters) GetPackage() string {
@@ -350,7 +350,7 @@ type DeleteVersionRequest struct {
 
 func (x *DeleteVersionRequest) Reset() {
 	*x = DeleteVersionRequest{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[5]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -362,7 +362,7 @@ func (x *DeleteVersionRequest) String() string {
 func (*DeleteVersionRequest) ProtoMessage() {}
 
 func (x *DeleteVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[5]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -375,7 +375,7 @@ func (x *DeleteVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteVersionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteVersionRequest) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{5}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeleteVersionRequest) GetPackage() string {
@@ -408,7 +408,7 @@ type Paths struct {
 
 func (x *Paths) Reset() {
 	*x = Paths{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[6]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -420,7 +420,7 @@ func (x *Paths) String() string {
 func (*Paths) ProtoMessage() {}
 
 func (x *Paths) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[6]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -433,7 +433,7 @@ func (x *Paths) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Paths.ProtoReflect.Descriptor instead.
 func (*Paths) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{6}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Paths) GetPaths() []string {
@@ -452,7 +452,7 @@ type Version struct {
 
 func (x *Version) Reset() {
 	*x = Version{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[7]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -464,7 +464,7 @@ func (x *Version) String() string {
 func (*Version) ProtoMessage() {}
 
 func (x *Version) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[7]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -477,7 +477,7 @@ func (x *Version) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Version.ProtoReflect.Descriptor instead.
 func (*Version) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{7}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Version) GetVersion() string {
@@ -497,7 +497,7 @@ type InUse struct {
 
 func (x *InUse) Reset() {
 	*x = InUse{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[8]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +509,7 @@ func (x *InUse) String() string {
 func (*InUse) ProtoMessage() {}
 
 func (x *InUse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[8]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +522,7 @@ func (x *InUse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InUse.ProtoReflect.Descriptor instead.
 func (*InUse) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{8}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *InUse) GetVersion() string {
@@ -552,7 +552,7 @@ type Package struct {
 
 func (x *Package) Reset() {
 	*x = Package{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[9]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -564,7 +564,7 @@ func (x *Package) String() string {
 func (*Package) ProtoMessage() {}
 
 func (x *Package) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[9]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -577,7 +577,7 @@ func (x *Package) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Package.ProtoReflect.Descriptor instead.
 func (*Package) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{9}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Package) GetName() string {
@@ -628,7 +628,7 @@ type Bundle struct {
 
 func (x *Bundle) Reset() {
 	*x = Bundle{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[10]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -640,7 +640,7 @@ func (x *Bundle) String() string {
 func (*Bundle) ProtoMessage() {}
 
 func (x *Bundle) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[10]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -653,7 +653,7 @@ func (x *Bundle) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bundle.ProtoReflect.Descriptor instead.
 func (*Bundle) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{10}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Bundle) GetPackage() string {
@@ -702,7 +702,7 @@ type Progress struct {
 
 func (x *Progress) Reset() {
 	*x = Progress{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[11]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -714,7 +714,7 @@ func (x *Progress) String() string {
 func (*Progress) ProtoMessage() {}
 
 func (x *Progress) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[11]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -727,7 +727,7 @@ func (x *Progress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Progress.ProtoReflect.Descriptor instead.
 func (*Progress) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{11}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Progress) GetProgress() int64 {
@@ -765,7 +765,7 @@ type Notice struct {
 
 func (x *Notice) Reset() {
 	*x = Notice{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[12]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -777,7 +777,7 @@ func (x *Notice) String() string {
 func (*Notice) ProtoMessage() {}
 
 func (x *Notice) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[12]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -790,7 +790,7 @@ func (x *Notice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Notice.ProtoReflect.Descriptor instead.
 func (*Notice) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{12}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Notice) GetLevel() uint32 {
@@ -832,7 +832,7 @@ type Prompt struct {
 
 func (x *Prompt) Reset() {
 	*x = Prompt{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[13]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -844,7 +844,7 @@ func (x *Prompt) String() string {
 func (*Prompt) ProtoMessage() {}
 
 func (x *Prompt) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[13]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -857,7 +857,7 @@ func (x *Prompt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Prompt.ProtoReflect.Descriptor instead.
 func (*Prompt) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{13}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Prompt) GetId() uint64 {
@@ -899,7 +899,7 @@ type PromptOption struct {
 
 func (x *PromptOption) Reset() {
 	*x = PromptOption{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[14]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -911,7 +911,7 @@ func (x *PromptOption) String() string {
 func (*PromptOption) ProtoMessage() {}
 
 func (x *PromptOption) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[14]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -924,7 +924,7 @@ func (x *PromptOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PromptOption.ProtoReflect.Descriptor instead.
 func (*PromptOption) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{14}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PromptOption) GetLabel() string {
@@ -952,7 +952,7 @@ type Answer struct {
 
 func (x *Answer) Reset() {
 	*x = Answer{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[15]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -964,7 +964,7 @@ func (x *Answer) String() string {
 func (*Answer) ProtoMessage() {}
 
 func (x *Answer) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[15]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -977,7 +977,7 @@ func (x *Answer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Answer.ProtoReflect.Descriptor instead.
 func (*Answer) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{15}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Answer) GetPrompt() uint64 {
@@ -1009,7 +1009,7 @@ type ChangeRequest struct {
 
 func (x *ChangeRequest) Reset() {
 	*x = ChangeRequest{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[16]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1021,7 +1021,7 @@ func (x *ChangeRequest) String() string {
 func (*ChangeRequest) ProtoMessage() {}
 
 func (x *ChangeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[16]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1034,7 +1034,7 @@ func (x *ChangeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeRequest.ProtoReflect.Descriptor instead.
 func (*ChangeRequest) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{16}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ChangeRequest) GetRequest() isChangeRequest_Request {
@@ -1094,7 +1094,7 @@ type ChangeEvent struct {
 
 func (x *ChangeEvent) Reset() {
 	*x = ChangeEvent{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[17]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1106,7 +1106,7 @@ func (x *ChangeEvent) String() string {
 func (*ChangeEvent) ProtoMessage() {}
 
 func (x *ChangeEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[17]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1119,7 +1119,7 @@ func (x *ChangeEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeEvent.ProtoReflect.Descriptor instead.
 func (*ChangeEvent) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{17}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ChangeEvent) GetEvent() isChangeEvent_Event {
@@ -1207,7 +1207,7 @@ type PackageError struct {
 
 func (x *PackageError) Reset() {
 	*x = PackageError{}
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[18]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1219,7 +1219,7 @@ func (x *PackageError) String() string {
 func (*PackageError) ProtoMessage() {}
 
 func (x *PackageError) ProtoReflect() protoreflect.Message {
-	mi := &file_pkgrpc_pkgrpc_proto_msgTypes[18]
+	mi := &file_pkgrpcpb_pkgrpc_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1232,7 +1232,7 @@ func (x *PackageError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageError.ProtoReflect.Descriptor instead.
 func (*PackageError) Descriptor() ([]byte, []int) {
-	return file_pkgrpc_pkgrpc_proto_rawDescGZIP(), []int{18}
+	return file_pkgrpcpb_pkgrpc_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *PackageError) GetKind() PackageError_Kind {
@@ -1242,11 +1242,11 @@ func (x *PackageError) GetKind() PackageError_Kind {
 	return PackageError_UNKNOWN
 }
 
-var File_pkgrpc_pkgrpc_proto protoreflect.FileDescriptor
+var File_pkgrpcpb_pkgrpc_proto protoreflect.FileDescriptor
 
-const file_pkgrpc_pkgrpc_proto_rawDesc = "" +
+const file_pkgrpcpb_pkgrpc_proto_rawDesc = "" +
 	"\n" +
-	"\x13pkgrpc/pkgrpc.proto\x12\x06pkgrpc\x1a\x1fgoogle/protobuf/timestamp.proto\"\a\n" +
+	"\x15pkgrpcpb/pkgrpc.proto\x12\x06pkgrpc\x1a\x1fgoogle/protobuf/timestamp.proto\"\a\n" +
 	"\x05Empty\"&\n" +
 	"\n" +
 	"PackageRef\x12\x18\n" +
@@ -1353,23 +1353,23 @@ const file_pkgrpc_pkgrpc_proto_rawDesc = "" +
 	"\x03Use\x12\x15.pkgrpc.ChangeRequest\x1a\x13.pkgrpc.ChangeEvent(\x010\x01\x122\n" +
 	"\rDeletePackage\x12\x12.pkgrpc.PackageRef\x1a\r.pkgrpc.Empty\x12C\n" +
 	"\x14DeletePackageVersion\x12\x1c.pkgrpc.DeleteVersionRequest\x1a\r.pkgrpc.Empty\x121\n" +
-	"\fVersionInUse\x12\x12.pkgrpc.PackageRef\x1a\r.pkgrpc.InUseB\tZ\a/pkgrpcb\x06proto3"
+	"\fVersionInUse\x12\x12.pkgrpc.PackageRef\x1a\r.pkgrpc.InUseB\vZ\t/pkgrpcpbb\x06proto3"
 
 var (
-	file_pkgrpc_pkgrpc_proto_rawDescOnce sync.Once
-	file_pkgrpc_pkgrpc_proto_rawDescData []byte
+	file_pkgrpcpb_pkgrpc_proto_rawDescOnce sync.Once
+	file_pkgrpcpb_pkgrpc_proto_rawDescData []byte
 )
 
-func file_pkgrpc_pkgrpc_proto_rawDescGZIP() []byte {
-	file_pkgrpc_pkgrpc_proto_rawDescOnce.Do(func() {
-		file_pkgrpc_pkgrpc_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkgrpc_pkgrpc_proto_rawDesc), len(file_pkgrpc_pkgrpc_proto_rawDesc)))
+func file_pkgrpcpb_pkgrpc_proto_rawDescGZIP() []byte {
+	file_pkgrpcpb_pkgrpc_proto_rawDescOnce.Do(func() {
+		file_pkgrpcpb_pkgrpc_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkgrpcpb_pkgrpc_proto_rawDesc), len(file_pkgrpcpb_pkgrpc_proto_rawDesc)))
 	})
-	return file_pkgrpc_pkgrpc_proto_rawDescData
+	return file_pkgrpcpb_pkgrpc_proto_rawDescData
 }
 
-var file_pkgrpc_pkgrpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pkgrpc_pkgrpc_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
-var file_pkgrpc_pkgrpc_proto_goTypes = []any{
+var file_pkgrpcpb_pkgrpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_pkgrpcpb_pkgrpc_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_pkgrpcpb_pkgrpc_proto_goTypes = []any{
 	(PackageError_Kind)(0),        // 0: pkgrpc.PackageError.Kind
 	(*Empty)(nil),                 // 1: pkgrpc.Empty
 	(*PackageRef)(nil),            // 2: pkgrpc.PackageRef
@@ -1396,7 +1396,7 @@ var file_pkgrpc_pkgrpc_proto_goTypes = []any{
 	nil,                           // 23: pkgrpc.Bundle.MetadataEntry
 	(*timestamppb.Timestamp)(nil), // 24: google.protobuf.Timestamp
 }
-var file_pkgrpc_pkgrpc_proto_depIdxs = []int32{
+var file_pkgrpcpb_pkgrpc_proto_depIdxs = []int32{
 	20, // 0: pkgrpc.Filters.filters:type_name -> pkgrpc.Filters.FiltersEntry
 	21, // 1: pkgrpc.PackageFilters.filters:type_name -> pkgrpc.PackageFilters.FiltersEntry
 	22, // 2: pkgrpc.Package.metadata:type_name -> pkgrpc.Package.MetadataEntry
@@ -1444,16 +1444,16 @@ var file_pkgrpc_pkgrpc_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_pkgrpc_pkgrpc_proto_init() }
-func file_pkgrpc_pkgrpc_proto_init() {
-	if File_pkgrpc_pkgrpc_proto != nil {
+func init() { file_pkgrpcpb_pkgrpc_proto_init() }
+func file_pkgrpcpb_pkgrpc_proto_init() {
+	if File_pkgrpcpb_pkgrpc_proto != nil {
 		return
 	}
-	file_pkgrpc_pkgrpc_proto_msgTypes[16].OneofWrappers = []any{
+	file_pkgrpcpb_pkgrpc_proto_msgTypes[16].OneofWrappers = []any{
 		(*ChangeRequest_Package)(nil),
 		(*ChangeRequest_Answer)(nil),
 	}
-	file_pkgrpc_pkgrpc_proto_msgTypes[17].OneofWrappers = []any{
+	file_pkgrpcpb_pkgrpc_proto_msgTypes[17].OneofWrappers = []any{
 		(*ChangeEvent_Progress)(nil),
 		(*ChangeEvent_Notice)(nil),
 		(*ChangeEvent_Done)(nil),
@@ -1463,18 +1463,18 @@ func file_pkgrpc_pkgrpc_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkgrpc_pkgrpc_proto_rawDesc), len(file_pkgrpc_pkgrpc_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkgrpcpb_pkgrpc_proto_rawDesc), len(file_pkgrpcpb_pkgrpc_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_pkgrpc_pkgrpc_proto_goTypes,
-		DependencyIndexes: file_pkgrpc_pkgrpc_proto_depIdxs,
-		EnumInfos:         file_pkgrpc_pkgrpc_proto_enumTypes,
-		MessageInfos:      file_pkgrpc_pkgrpc_proto_msgTypes,
+		GoTypes:           file_pkgrpcpb_pkgrpc_proto_goTypes,
+		DependencyIndexes: file_pkgrpcpb_pkgrpc_proto_depIdxs,
+		EnumInfos:         file_pkgrpcpb_pkgrpc_proto_enumTypes,
+		MessageInfos:      file_pkgrpcpb_pkgrpc_proto_msgTypes,
 	}.Build()
-	File_pkgrpc_pkgrpc_proto = out.File
-	file_pkgrpc_pkgrpc_proto_goTypes = nil
-	file_pkgrpc_pkgrpc_proto_depIdxs = nil
+	File_pkgrpcpb_pkgrpc_proto = out.File
+	file_pkgrpcpb_pkgrpc_proto_goTypes = nil
+	file_pkgrpcpb_pkgrpc_proto_depIdxs = nil
 }

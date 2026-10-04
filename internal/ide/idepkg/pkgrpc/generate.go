@@ -14,6 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package idepkg
+package pkgrpc
 
-//go:generate protoc pkgrpc/pkgrpc.proto --go_out=. --go-grpc_out=. --go_opt=Mpkgrpc/pkgrpc.proto=/pkgrpc
+//go:generate protoc pkgrpcpb/pkgrpc.proto --go_out=. --go-grpc_out=. --go_opt=Mpkgrpcpb/pkgrpc.proto=/pkgrpcpb

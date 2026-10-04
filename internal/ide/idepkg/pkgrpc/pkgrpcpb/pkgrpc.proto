@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 syntax = "proto3";
-option go_package = "/pkgrpc";
+option go_package = "/pkgrpcpb";
 
 package pkgrpc;
 

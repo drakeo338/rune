@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc/pkgrpcpb"
 )
 
 // pathsPerMessage bounds a LibDir message: a toolchain's lib dir holds
@@ -39,7 +40,7 @@ const pathsPerMessage = 512
 
 // Server serves a PackageManager to remote clients.
 type Server struct {
-	UnimplementedPackageManagerServer
+	pkgrpcpb.UnimplementedPackageManagerServer
 	pm idepkg.PackageManager
 	// mutating admits one install, use, delete or answer to a prompt at
 	// a time: concurrent package config merges into the same user
@@ -53,6 +54,11 @@ type Server struct {
 // and ask instead of any user of its own.
 func NewServer(pm idepkg.PackageManager) *Server {
 	return &Server{pm: pm, mutating: make(chan struct{}, 1)}
+}
+
+// Register serves s on r.
+func (s *Server) Register(r grpc.ServiceRegistrar) {
+	pkgrpcpb.RegisterPackageManagerServer(r, s)
 }
 
 func (s *Server) lockMutation(ctx context.Context) (unlock func(), err error) {
@@ -105,8 +111,8 @@ func streamAll[T any](
 	return toStatus(it.Err())
 }
 
-// LibDir implements PackageManagerServer.
-func (s *Server) LibDir(req *PackageRef, stream grpc.ServerStreamingServer[Paths]) error {
+// LibDir implements pkgrpcpb.PackageManagerServer.
+func (s *Server) LibDir(req *pkgrpcpb.PackageRef, stream grpc.ServerStreamingServer[pkgrpcpb.Paths]) error {
 	ctx := stream.Context()
 	it, err := s.pm.LibDir(ctx, req.GetPackage())
 	if err != nil {
@@ -126,7 +132,7 @@ func (s *Server) LibDir(req *PackageRef, stream grpc.ServerStreamingServer[Paths
 		if len(batch) < pathsPerMessage {
 			continue
 		}
-		if err := stream.Send(&Paths{Paths: batch}); err != nil {
+		if err := stream.Send(&pkgrpcpb.Paths{Paths: batch}); err != nil {
 			return err
 		}
 		batch = make([]string, 0, pathsPerMessage)
@@ -135,22 +141,22 @@ func (s *Server) LibDir(req *PackageRef, stream grpc.ServerStreamingServer[Paths
 		return toStatus(err)
 	}
 	if len(batch) > 0 {
-		return stream.Send(&Paths{Paths: batch})
+		return stream.Send(&pkgrpcpb.Paths{Paths: batch})
 	}
 	return nil
 }
 
-// LatestVersion implements PackageManagerServer.
-func (s *Server) LatestVersion(ctx context.Context, req *PackageRef) (*Version, error) {
+// LatestVersion implements pkgrpcpb.PackageManagerServer.
+func (s *Server) LatestVersion(ctx context.Context, req *pkgrpcpb.PackageRef) (*pkgrpcpb.Version, error) {
 	v, err := s.pm.LatestVersion(ctx, req.GetPackage())
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &Version{Version: string(v)}, nil
+	return &pkgrpcpb.Version{Version: string(v)}, nil
 }
 
-// DescribePackage implements PackageManagerServer.
-func (s *Server) DescribePackage(ctx context.Context, req *PackageRef) (*Package, error) {
+// DescribePackage implements pkgrpcpb.PackageManagerServer.
+func (s *Server) DescribePackage(ctx context.Context, req *pkgrpcpb.PackageRef) (*pkgrpcpb.Package, error) {
 	p, err := s.pm.DescribePackage(ctx, req.GetPackage())
 	if err != nil {
 		return nil, toStatus(err)
@@ -158,8 +164,8 @@ func (s *Server) DescribePackage(ctx context.Context, req *PackageRef) (*Package
 	return packageToProto(p), nil
 }
 
-// DescribeRelease implements PackageManagerServer.
-func (s *Server) DescribeRelease(ctx context.Context, req *PackageVersion) (*Bundle, error) {
+// DescribeRelease implements pkgrpcpb.PackageManagerServer.
+func (s *Server) DescribeRelease(ctx context.Context, req *pkgrpcpb.PackageVersion) (*pkgrpcpb.Bundle, error) {
 	b, err := s.pm.DescribeRelease(ctx, req.GetPackage(), req.GetVersion())
 	if err != nil {
 		return nil, toStatus(err)
@@ -167,8 +173,8 @@ func (s *Server) DescribeRelease(ctx context.Context, req *PackageVersion) (*Bun
 	return bundleToProto(b), nil
 }
 
-// ListPackages implements PackageManagerServer.
-func (s *Server) ListPackages(req *Filters, stream grpc.ServerStreamingServer[Package]) error {
+// ListPackages implements pkgrpcpb.PackageManagerServer.
+func (s *Server) ListPackages(req *pkgrpcpb.Filters, stream grpc.ServerStreamingServer[pkgrpcpb.Package]) error {
 	return streamAll(stream, func() (iterator.Iterator[release.Package], error) {
 		return s.pm.ListPackages(stream.Context(), req.GetFilters())
 	}, func(p release.Package) error {
@@ -176,9 +182,9 @@ func (s *Server) ListPackages(req *Filters, stream grpc.ServerStreamingServer[Pa
 	})
 }
 
-// ListPackageVersions implements PackageManagerServer.
+// ListPackageVersions implements pkgrpcpb.PackageManagerServer.
 func (s *Server) ListPackageVersions(
-	req *PackageFilters, stream grpc.ServerStreamingServer[Bundle],
+	req *pkgrpcpb.PackageFilters, stream grpc.ServerStreamingServer[pkgrpcpb.Bundle],
 ) error {
 	return streamAll(stream, func() (iterator.Iterator[release.Bundle], error) {
 		return s.pm.ListPackageVersions(stream.Context(), req.GetPackage(), req.GetFilters())
@@ -187,48 +193,48 @@ func (s *Server) ListPackageVersions(
 	})
 }
 
-// ListInstalledPackages implements PackageManagerServer.
+// ListInstalledPackages implements pkgrpcpb.PackageManagerServer.
 func (s *Server) ListInstalledPackages(
-	_ *Empty, stream grpc.ServerStreamingServer[PackageRef],
+	_ *pkgrpcpb.Empty, stream grpc.ServerStreamingServer[pkgrpcpb.PackageRef],
 ) error {
 	return streamAll(stream, func() (iterator.Iterator[string], error) {
 		return s.pm.ListInstalledPackages(stream.Context())
 	}, func(pkgID string) error {
-		return stream.Send(&PackageRef{Package: pkgID})
+		return stream.Send(&pkgrpcpb.PackageRef{Package: pkgID})
 	})
 }
 
-// ListInstalledPackageVersions implements PackageManagerServer.
+// ListInstalledPackageVersions implements pkgrpcpb.PackageManagerServer.
 func (s *Server) ListInstalledPackageVersions(
-	req *PackageRef, stream grpc.ServerStreamingServer[Version],
+	req *pkgrpcpb.PackageRef, stream grpc.ServerStreamingServer[pkgrpcpb.Version],
 ) error {
 	return streamAll(stream, func() (iterator.Iterator[release.Version], error) {
 		return s.pm.ListInstalledPackageVersions(stream.Context(), req.GetPackage())
 	}, func(v release.Version) error {
-		return stream.Send(&Version{Version: string(v)})
+		return stream.Send(&pkgrpcpb.Version{Version: string(v)})
 	})
 }
 
-// Install implements PackageManagerServer.
+// Install implements pkgrpcpb.PackageManagerServer.
 func (s *Server) Install(stream changeServerStream) error {
 	return s.serveChange(stream, func(
-		ctx context.Context, req *PackageVersion, c *changeStream,
+		ctx context.Context, req *pkgrpcpb.PackageVersion, c *changeStream,
 	) error {
 		return s.pm.InstallPackageVersion(ctx, req.GetPackage(),
 			release.Version(req.GetVersion()), c)
 	})
 }
 
-// Use implements PackageManagerServer.
+// Use implements pkgrpcpb.PackageManagerServer.
 func (s *Server) Use(stream changeServerStream) error {
 	return s.serveChange(stream, func(
-		ctx context.Context, req *PackageVersion, _ *changeStream,
+		ctx context.Context, req *pkgrpcpb.PackageVersion, _ *changeStream,
 	) error {
 		return s.pm.UsePackageVersion(ctx, req.GetPackage(), release.Version(req.GetVersion()))
 	})
 }
 
-type changeServerStream = grpc.BidiStreamingServer[ChangeRequest, ChangeEvent]
+type changeServerStream = grpc.BidiStreamingServer[pkgrpcpb.ChangeRequest, pkgrpcpb.ChangeEvent]
 
 // serveChange runs the install or use the client requests on stream,
 // relaying to the client what pm notifies and asks meanwhile, then
@@ -236,7 +242,7 @@ type changeServerStream = grpc.BidiStreamingServer[ChangeRequest, ChangeEvent]
 // the client goes away.
 func (s *Server) serveChange(
 	stream changeServerStream,
-	run func(context.Context, *PackageVersion, *changeStream) error,
+	run func(context.Context, *pkgrpcpb.PackageVersion, *changeStream) error,
 ) error {
 	ctx := stream.Context()
 	first, err := stream.Recv()
@@ -255,7 +261,7 @@ func (s *Server) serveChange(
 	if err != nil {
 		return toStatus(err)
 	}
-	c.send(&ChangeEvent{Event: &ChangeEvent_Done{Done: &Empty{}}})
+	c.send(&pkgrpcpb.ChangeEvent{Event: &pkgrpcpb.ChangeEvent_Done{Done: &pkgrpcpb.Empty{}}})
 	for c.pending() {
 		msg, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
@@ -279,8 +285,8 @@ func (s *Server) serveChange(
 	return c.err()
 }
 
-// DeletePackage implements PackageManagerServer.
-func (s *Server) DeletePackage(ctx context.Context, req *PackageRef) (*Empty, error) {
+// DeletePackage implements pkgrpcpb.PackageManagerServer.
+func (s *Server) DeletePackage(ctx context.Context, req *pkgrpcpb.PackageRef) (*pkgrpcpb.Empty, error) {
 	unlock, err := s.lockMutation(ctx)
 	if err != nil {
 		return nil, toStatus(err)
@@ -289,13 +295,13 @@ func (s *Server) DeletePackage(ctx context.Context, req *PackageRef) (*Empty, er
 	if err := s.pm.DeletePackage(ctx, req.GetPackage()); err != nil {
 		return nil, toStatus(err)
 	}
-	return &Empty{}, nil
+	return &pkgrpcpb.Empty{}, nil
 }
 
-// DeletePackageVersion implements PackageManagerServer.
+// DeletePackageVersion implements pkgrpcpb.PackageManagerServer.
 func (s *Server) DeletePackageVersion(
-	ctx context.Context, req *DeleteVersionRequest,
-) (*Empty, error) {
+	ctx context.Context, req *pkgrpcpb.DeleteVersionRequest,
+) (*pkgrpcpb.Empty, error) {
 	unlock, err := s.lockMutation(ctx)
 	if err != nil {
 		return nil, toStatus(err)
@@ -306,16 +312,16 @@ func (s *Server) DeletePackageVersion(
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &Empty{}, nil
+	return &pkgrpcpb.Empty{}, nil
 }
 
-// VersionInUse implements PackageManagerServer.
-func (s *Server) VersionInUse(ctx context.Context, req *PackageRef) (*InUse, error) {
+// VersionInUse implements pkgrpcpb.PackageManagerServer.
+func (s *Server) VersionInUse(ctx context.Context, req *pkgrpcpb.PackageRef) (*pkgrpcpb.InUse, error) {
 	v, ok, err := s.pm.PackageVersionInUse(ctx, req.GetPackage())
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &InUse{Version: string(v), InUse: ok}, nil
+	return &pkgrpcpb.InUse{Version: string(v), InUse: ok}, nil
 }
 
 // changeStream is the progress writer and the idepkg.UI of the install
@@ -336,7 +342,7 @@ type changeStream struct {
 var _ idepkg.UI = (*changeStream)(nil)
 
 func (c *changeStream) Progress(progress, total int64, units string) {
-	c.send(&ChangeEvent{Event: &ChangeEvent_Progress{Progress: &Progress{
+	c.send(&pkgrpcpb.ChangeEvent{Event: &pkgrpcpb.ChangeEvent_Progress{Progress: &pkgrpcpb.Progress{
 		Progress: progress, Total: total, Units: units,
 	}}})
 }
@@ -344,14 +350,14 @@ func (c *changeStream) Progress(progress, total int64, units string) {
 func (c *changeStream) Notify(
 	level browserapi.NotificationLevel, msg string, args ...any,
 ) (string, error) {
-	c.notice(&Notice{Level: uint32(level), Message: fmt.Sprintf(msg, args...)})
+	c.notice(&pkgrpcpb.Notice{Level: uint32(level), Message: fmt.Sprintf(msg, args...)})
 	return "", nil
 }
 
 func (c *changeStream) NotifyOnce(
 	level browserapi.NotificationLevel, msg string, args ...any,
 ) (string, error) {
-	c.notice(&Notice{Level: uint32(level), Message: fmt.Sprintf(msg, args...), Once: true})
+	c.notice(&pkgrpcpb.Notice{Level: uint32(level), Message: fmt.Sprintf(msg, args...), Once: true})
 	return "", nil
 }
 
@@ -369,16 +375,16 @@ func (c *changeStream) PromptConfig(p idepkg.ConfigPrompt, answer func(bool)) {
 	}
 	c.lastPrompt++
 	c.prompts[c.lastPrompt] = answer
-	c.sendErr = c.stream.Send(&ChangeEvent{Event: &ChangeEvent_Prompt{
+	c.sendErr = c.stream.Send(&pkgrpcpb.ChangeEvent{Event: &pkgrpcpb.ChangeEvent_Prompt{
 		Prompt: promptToProto(c.lastPrompt, p),
 	}})
 }
 
-func (c *changeStream) notice(n *Notice) {
-	c.send(&ChangeEvent{Event: &ChangeEvent_Notice{Notice: n}})
+func (c *changeStream) notice(n *pkgrpcpb.Notice) {
+	c.send(&pkgrpcpb.ChangeEvent{Event: &pkgrpcpb.ChangeEvent_Notice{Notice: n}})
 }
 
-func (c *changeStream) send(ev *ChangeEvent) {
+func (c *changeStream) send(ev *pkgrpcpb.ChangeEvent) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closed || c.sendErr != nil {

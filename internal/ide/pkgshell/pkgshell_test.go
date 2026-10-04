@@ -40,6 +40,7 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/tui"
 	"unstable.build/rune/internal/ide/idepkg"
 	"unstable.build/rune/internal/ide/idepkg/idepkgtest"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
 )
 
 type recordingProgressWriter struct {
@@ -478,6 +479,24 @@ func TestHandlerUsesAnyPackageManager(t *testing.T) {
 		require.Len(t, out, 1, tc.args)
 		assert.Contains(t, renderText(t, out[0]), tc.want, tc.args)
 	}
+}
+
+// oldHost runs a Rune that does not serve package management.
+type oldHost struct {
+	idepkg.PackageManager
+}
+
+func (oldHost) LatestVersion(context.Context, string) (release.Version, error) {
+	return "", pkgrpc.ErrUnsupported
+}
+
+func TestHandlerOnOldHost(t *testing.T) {
+	t.Parallel()
+	h := New(Config{Manager: oldHost{}, Host: "studio"})
+	_, err := h.HandleCommand(context.Background(),
+		repl.Command{Name: CommandName, Args: []string{"install", "go"}},
+		&recordingProgressWriter{})
+	require.EqualError(t, err, "Update Rune on studio to install packages there.")
 }
 
 func renderText(t *testing.T, c component.Responsive) string {

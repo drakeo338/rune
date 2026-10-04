@@ -23,10 +23,11 @@ import (
 	"github.com/unstablebuild/blue/release"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc/pkgrpcpb"
 )
 
-func packageToProto(p release.Package) *Package {
-	return &Package{
+func packageToProto(p release.Package) *pkgrpcpb.Package {
+	return &pkgrpcpb.Package{
 		Name:      p.Name,
 		Latest:    string(p.Latest),
 		Notes:     p.Notes,
@@ -35,7 +36,7 @@ func packageToProto(p release.Package) *Package {
 	}
 }
 
-func packageFromProto(p *Package) release.Package {
+func packageFromProto(p *pkgrpcpb.Package) release.Package {
 	return release.Package{
 		Name:      p.GetName(),
 		Latest:    release.Version(p.GetLatest()),
@@ -45,8 +46,8 @@ func packageFromProto(p *Package) release.Package {
 	}
 }
 
-func bundleToProto(b release.Bundle) *Bundle {
-	return &Bundle{
+func bundleToProto(b release.Bundle) *pkgrpcpb.Bundle {
+	return &pkgrpcpb.Bundle{
 		Package:   b.Package,
 		Version:   string(b.Version),
 		Notes:     b.Notes,
@@ -55,7 +56,7 @@ func bundleToProto(b release.Bundle) *Bundle {
 	}
 }
 
-func bundleFromProto(b *Bundle) release.Bundle {
+func bundleFromProto(b *pkgrpcpb.Bundle) release.Bundle {
 	return release.Bundle{
 		Package:   b.GetPackage(),
 		Version:   release.Version(b.GetVersion()),
@@ -65,15 +66,15 @@ func bundleFromProto(b *Bundle) release.Bundle {
 	}
 }
 
-func promptToProto(id uint64, p idepkg.ConfigPrompt) *Prompt {
-	options := make([]*PromptOption, len(p.Options))
+func promptToProto(id uint64, p idepkg.ConfigPrompt) *pkgrpcpb.Prompt {
+	options := make([]*pkgrpcpb.PromptOption, len(p.Options))
 	for i, opt := range p.Options {
-		options[i] = &PromptOption{Label: opt.Label}
+		options[i] = &pkgrpcpb.PromptOption{Label: opt.Label}
 		if opt.Key != 0 {
 			options[i].Key = string(opt.Key)
 		}
 	}
-	return &Prompt{
+	return &pkgrpcpb.Prompt{
 		Id:       id,
 		Message:  p.Message,
 		Options:  options,
@@ -81,7 +82,7 @@ func promptToProto(id uint64, p idepkg.ConfigPrompt) *Prompt {
 	}
 }
 
-func promptFromProto(p *Prompt) idepkg.ConfigPrompt {
+func promptFromProto(p *pkgrpcpb.Prompt) idepkg.ConfigPrompt {
 	options := make([]idepkg.PromptOption, len(p.GetOptions()))
 	for i, opt := range p.GetOptions() {
 		options[i] = idepkg.PromptOption{Label: opt.GetLabel()}

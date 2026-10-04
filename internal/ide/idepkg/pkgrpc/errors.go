@@ -19,32 +19,40 @@ package pkgrpc
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"unstable.build/rune/auth"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc/pkgrpcpb"
 )
 
 // ErrUnsupported is returned when the host runs a Rune that does not
 // serve package management.
 var ErrUnsupported = errors.New("the host does not support package management")
 
+// UpdateHostMessage tells the user what to do about ErrUnsupported
+// from host.
+func UpdateHostMessage(host string) string {
+	return fmt.Sprintf("Update Rune on %s to install packages there.", host)
+}
+
 var errorKinds = []struct {
-	kind PackageError_Kind
+	kind pkgrpcpb.PackageError_Kind
 	err  error
 	code codes.Code
 }{
-	{PackageError_NOT_INSTALLED, idepkg.ErrNotInstalled, codes.NotFound},
-	{PackageError_PACKAGE_NOT_FOUND, idepkg.ErrPackageNotFound, codes.NotFound},
-	{PackageError_VERSION_NOT_FOUND, idepkg.ErrVersionNotFound, codes.NotFound},
-	{PackageError_ALREADY_INSTALLED, idepkg.ErrAlreadyInstalled, codes.AlreadyExists},
-	{PackageError_VERSION_IN_USE, idepkg.ErrVersionInUse, codes.FailedPrecondition},
-	{PackageError_SERVER_UNAVAILABLE, idepkg.ErrServerUnavailable, codes.Unavailable},
-	{PackageError_ARTIFACT_MISSING, idepkg.ErrArtifactMissing, codes.NotFound},
-	{PackageError_FORBIDDEN, idepkg.ErrForbidden, codes.PermissionDenied},
-	{PackageError_NO_RELEASES, idepkg.ErrNoReleases, codes.NotFound},
-	{PackageError_NOT_AUTHENTICATED, auth.ErrNotAuthenticated, codes.Unauthenticated},
+	{pkgrpcpb.PackageError_NOT_INSTALLED, idepkg.ErrNotInstalled, codes.NotFound},
+	{pkgrpcpb.PackageError_PACKAGE_NOT_FOUND, idepkg.ErrPackageNotFound, codes.NotFound},
+	{pkgrpcpb.PackageError_VERSION_NOT_FOUND, idepkg.ErrVersionNotFound, codes.NotFound},
+	{pkgrpcpb.PackageError_ALREADY_INSTALLED, idepkg.ErrAlreadyInstalled, codes.AlreadyExists},
+	{pkgrpcpb.PackageError_VERSION_IN_USE, idepkg.ErrVersionInUse, codes.FailedPrecondition},
+	{pkgrpcpb.PackageError_SERVER_UNAVAILABLE, idepkg.ErrServerUnavailable, codes.Unavailable},
+	{pkgrpcpb.PackageError_ARTIFACT_MISSING, idepkg.ErrArtifactMissing, codes.NotFound},
+	{pkgrpcpb.PackageError_FORBIDDEN, idepkg.ErrForbidden, codes.PermissionDenied},
+	{pkgrpcpb.PackageError_NO_RELEASES, idepkg.ErrNoReleases, codes.NotFound},
+	{pkgrpcpb.PackageError_NOT_AUTHENTICATED, auth.ErrNotAuthenticated, codes.Unauthenticated},
 }
 
 // toStatus encodes err for the wire, tagging it with the idepkg sentinel
@@ -68,7 +76,7 @@ func toStatus(err error) error {
 			continue
 		}
 		st, detailErr := status.New(k.code, err.Error()).
-			WithDetails(&PackageError{Kind: k.kind})
+			WithDetails(&pkgrpcpb.PackageError{Kind: k.kind})
 		if detailErr != nil {
 			return status.Error(k.code, err.Error())
 		}
@@ -95,7 +103,7 @@ func fromStatus(err error) error {
 		return &remoteError{msg: st.Message(), err: context.DeadlineExceeded}
 	}
 	for _, d := range st.Details() {
-		pe, ok := d.(*PackageError)
+		pe, ok := d.(*pkgrpcpb.PackageError)
 		if !ok {
 			continue
 		}

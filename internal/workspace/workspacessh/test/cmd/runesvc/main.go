@@ -94,8 +94,13 @@ func main() {
 	// hand back a client while stdout carries no gRPC server yet.
 	sleepServeDelay(*dataDir)
 
+	grpcServer := workspacessh.NewSchemeServer()
+	if err := servePackages(grpcServer, *dataDir); err != nil {
+		fmt.Fprintln(os.Stderr, "runesvc: serve packages:", err)
+		os.Exit(6)
+	}
 	if err := workspacessh.StartSchemeServer(
-		log.New(), server, workspacessh.NewSchemeServer()); err != nil {
+		log.New(), server, grpcServer); err != nil {
 		fmt.Fprintln(os.Stderr, "runesvc: start scheme server:", err)
 		os.Exit(5)
 	}

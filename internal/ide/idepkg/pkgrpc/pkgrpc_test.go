@@ -47,6 +47,7 @@ import (
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/ide/idepkg"
 	"unstable.build/rune/internal/ide/idepkg/idepkgtest"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc/pkgrpcpb"
 	"unstable.build/rune/internal/workspace"
 )
 
@@ -78,7 +79,7 @@ func serve(t *testing.T, pm idepkg.PackageManager) (*Client, *recorder) {
 	t.Helper()
 	events := &recorder{}
 	return dial(t, func(s *grpc.Server) {
-		RegisterPackageManagerServer(s, NewServer(pm))
+		pkgrpcpb.RegisterPackageManagerServer(s, NewServer(pm))
 	}, events), events
 }
 
@@ -474,7 +475,7 @@ func TestAnswerAfterTheHostLeft(t *testing.T) {
 	pm, dataDir := newHost(t, pkgs, bundles)
 	require.NoError(t, os.WriteFile(filepath.Join(dataDir, "rune.yaml"),
 		[]byte("env:\n  GOROOT: /custom/go\n"), 0o644))
-	cc := dialConn(t, func(s *grpc.Server) { RegisterPackageManagerServer(s, NewServer(pm)) })
+	cc := dialConn(t, func(s *grpc.Server) { NewServer(pm).Register(s) })
 	events := &recorder{}
 	c := NewClient(cc, events)
 

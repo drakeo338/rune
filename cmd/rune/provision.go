@@ -93,15 +93,6 @@ func installRemotePackageEntries(
 	scheme schemeapi.Scheme, progress io.Writer, entries []idepkg.ProvisionEntry,
 	releaseManager release.Manager,
 ) {
-	configBase := func() map[string]any {
-		tree, err := ide.DefaultConfigTree(runeDefaultConfig())
-		if err != nil {
-			log.Warnf("provision: decode default config tree: %v", err)
-			return nil
-		}
-		return tree
-	}
-
 	// Resolve the user's editor mode before installing so package config.star
 	// scripts that read RUNE_EDITOR_MODE (e.g. mode-aware key bindings) decode
 	// instead of failing with "undefined: RUNE_EDITOR_MODE". The mode is a user
@@ -112,7 +103,7 @@ func installRemotePackageEntries(
 	trust := pkgtrust.NewStore(*flagDataPath, trustKeyringFetcher())
 	mgr, storage := idepkg.NewProvisioningManager(
 		newRuneStorage(*flagDataPath), releaseManager, scheme,
-		*flagDataPath, *flagConfigPath, editorMode, configBase, trust)
+		*flagDataPath, *flagConfigPath, editorMode, defaultConfigTree, trust)
 	defer func() { _ = storage.Close() }()
 
 	ctx := context.Background()
@@ -284,7 +275,12 @@ func loadRemoteConfigAndApplyEnv(scheme schemeapi.Scheme, uri workspaceapi.URI) 
 			rootCfg = config.NopConfig()
 		}
 	}
+	applyConfigEnv(rootCfg)
+}
 
+// applyConfigEnv applies rootCfg's gui.env block to this process and
+// prepends ~/.rune/bin to PATH. Failures are logged.
+func applyConfigEnv(rootCfg config.Config) {
 	guiCfg, ok, err := getGUIConfig(rootCfg)
 	if err != nil {
 		log.Warnf("provision: read gui config: %v", err)

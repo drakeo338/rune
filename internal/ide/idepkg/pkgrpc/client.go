@@ -29,13 +29,14 @@ import (
 	"google.golang.org/grpc"
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc/pkgrpcpb"
 )
 
 // Client is the PackageManager of the host whose Server it is connected
 // to. Every path it returns is a path on that host. It returns
 // ErrUnsupported when the host does not serve package management.
 type Client struct {
-	c  PackageManagerClient
+	c  pkgrpcpb.PackageManagerClient
 	ui idepkg.UI
 }
 
@@ -45,19 +46,19 @@ var _ idepkg.PackageManager = (*Client)(nil)
 // the host emits while it installs or switches a package, and asks
 // there the questions the host has about its user config.
 func NewClient(cc grpc.ClientConnInterface, ui idepkg.UI) *Client {
-	return &Client{c: NewPackageManagerClient(cc), ui: ui}
+	return &Client{c: pkgrpcpb.NewPackageManagerClient(cc), ui: ui}
 }
 
 // LibDir implements idepkg.PackageManager.
 func (c *Client) LibDir(ctx context.Context, pkgID string) (iterator.Iterator[string], error) {
-	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[Paths], error) {
-		return c.c.LibDir(ctx, &PackageRef{Package: pkgID})
-	}, (*Paths).GetPaths)
+	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[pkgrpcpb.Paths], error) {
+		return c.c.LibDir(ctx, &pkgrpcpb.PackageRef{Package: pkgID})
+	}, (*pkgrpcpb.Paths).GetPaths)
 }
 
 // LatestVersion implements idepkg.PackageManager.
 func (c *Client) LatestVersion(ctx context.Context, pkgID string) (release.Version, error) {
-	v, err := c.c.LatestVersion(ctx, &PackageRef{Package: pkgID})
+	v, err := c.c.LatestVersion(ctx, &pkgrpcpb.PackageRef{Package: pkgID})
 	if err != nil {
 		return "", fromStatus(err)
 	}
@@ -66,7 +67,7 @@ func (c *Client) LatestVersion(ctx context.Context, pkgID string) (release.Versi
 
 // DescribePackage implements idepkg.PackageManager.
 func (c *Client) DescribePackage(ctx context.Context, pkgID string) (release.Package, error) {
-	p, err := c.c.DescribePackage(ctx, &PackageRef{Package: pkgID})
+	p, err := c.c.DescribePackage(ctx, &pkgrpcpb.PackageRef{Package: pkgID})
 	if err != nil {
 		return release.Package{}, fromStatus(err)
 	}
@@ -77,7 +78,7 @@ func (c *Client) DescribePackage(ctx context.Context, pkgID string) (release.Pac
 func (c *Client) DescribeRelease(
 	ctx context.Context, pkgID string, version string,
 ) (release.Bundle, error) {
-	b, err := c.c.DescribeRelease(ctx, &PackageVersion{Package: pkgID, Version: version})
+	b, err := c.c.DescribeRelease(ctx, &pkgrpcpb.PackageVersion{Package: pkgID, Version: version})
 	if err != nil {
 		return release.Bundle{}, fromStatus(err)
 	}
@@ -88,9 +89,9 @@ func (c *Client) DescribeRelease(
 func (c *Client) ListPackages(
 	ctx context.Context, filters map[string]string,
 ) (iterator.Iterator[release.Package], error) {
-	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[Package], error) {
-		return c.c.ListPackages(ctx, &Filters{Filters: filters})
-	}, func(p *Package) []release.Package {
+	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[pkgrpcpb.Package], error) {
+		return c.c.ListPackages(ctx, &pkgrpcpb.Filters{Filters: filters})
+	}, func(p *pkgrpcpb.Package) []release.Package {
 		return []release.Package{packageFromProto(p)}
 	})
 }
@@ -99,18 +100,18 @@ func (c *Client) ListPackages(
 func (c *Client) ListPackageVersions(
 	ctx context.Context, pkgID string, filters map[string]string,
 ) (iterator.Iterator[release.Bundle], error) {
-	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[Bundle], error) {
-		return c.c.ListPackageVersions(ctx, &PackageFilters{Package: pkgID, Filters: filters})
-	}, func(b *Bundle) []release.Bundle {
+	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[pkgrpcpb.Bundle], error) {
+		return c.c.ListPackageVersions(ctx, &pkgrpcpb.PackageFilters{Package: pkgID, Filters: filters})
+	}, func(b *pkgrpcpb.Bundle) []release.Bundle {
 		return []release.Bundle{bundleFromProto(b)}
 	})
 }
 
 // ListInstalledPackages implements idepkg.PackageManager.
 func (c *Client) ListInstalledPackages(ctx context.Context) (iterator.Iterator[string], error) {
-	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[PackageRef], error) {
-		return c.c.ListInstalledPackages(ctx, &Empty{})
-	}, func(p *PackageRef) []string {
+	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[pkgrpcpb.PackageRef], error) {
+		return c.c.ListInstalledPackages(ctx, &pkgrpcpb.Empty{})
+	}, func(p *pkgrpcpb.PackageRef) []string {
 		return []string{p.GetPackage()}
 	})
 }
@@ -119,9 +120,9 @@ func (c *Client) ListInstalledPackages(ctx context.Context) (iterator.Iterator[s
 func (c *Client) ListInstalledPackageVersions(
 	ctx context.Context, pkgID string,
 ) (iterator.Iterator[release.Version], error) {
-	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[Version], error) {
-		return c.c.ListInstalledPackageVersions(ctx, &PackageRef{Package: pkgID})
-	}, func(v *Version) []release.Version {
+	return openStream(ctx, func(ctx context.Context) (grpc.ServerStreamingClient[pkgrpcpb.Version], error) {
+		return c.c.ListInstalledPackageVersions(ctx, &pkgrpcpb.PackageRef{Package: pkgID})
+	}, func(v *pkgrpcpb.Version) []release.Version {
 		return []release.Version{release.Version(v.GetVersion())}
 	})
 }
@@ -149,7 +150,7 @@ func (c *Client) UsePackageVersion(
 
 // DeletePackage implements idepkg.PackageManager.
 func (c *Client) DeletePackage(ctx context.Context, pkgID string) error {
-	_, err := c.c.DeletePackage(ctx, &PackageRef{Package: pkgID})
+	_, err := c.c.DeletePackage(ctx, &pkgrpcpb.PackageRef{Package: pkgID})
 	return fromStatus(err)
 }
 
@@ -157,7 +158,7 @@ func (c *Client) DeletePackage(ctx context.Context, pkgID string) error {
 func (c *Client) DeletePackageVersion(
 	ctx context.Context, pkgID string, version release.Version, force bool,
 ) error {
-	_, err := c.c.DeletePackageVersion(ctx, &DeleteVersionRequest{
+	_, err := c.c.DeletePackageVersion(ctx, &pkgrpcpb.DeleteVersionRequest{
 		Package: pkgID, Version: string(version), Force: force,
 	})
 	return fromStatus(err)
@@ -167,14 +168,14 @@ func (c *Client) DeletePackageVersion(
 func (c *Client) PackageVersionInUse(
 	ctx context.Context, pkgID string,
 ) (release.Version, bool, error) {
-	resp, err := c.c.VersionInUse(ctx, &PackageRef{Package: pkgID})
+	resp, err := c.c.VersionInUse(ctx, &pkgrpcpb.PackageRef{Package: pkgID})
 	if err != nil {
 		return "", false, fromStatus(err)
 	}
 	return release.Version(resp.GetVersion()), resp.GetInUse(), nil
 }
 
-type changeClientStream = grpc.BidiStreamingClient[ChangeRequest, ChangeEvent]
+type changeClientStream = grpc.BidiStreamingClient[pkgrpcpb.ChangeRequest, pkgrpcpb.ChangeEvent]
 
 // change requests an install or a use on a stream open opens, and
 // returns once the host is done with it. The stream outlives the call
@@ -193,8 +194,8 @@ func (c *Client) change(
 	}
 	s := &answerStream{stream: stream}
 	// A failed send ends the stream, and Recv reports why.
-	_ = s.send(&ChangeRequest{Request: &ChangeRequest_Package{
-		Package: &PackageVersion{Package: pkgID, Version: string(version)},
+	_ = s.send(&pkgrpcpb.ChangeRequest{Request: &pkgrpcpb.ChangeRequest_Package{
+		Package: &pkgrpcpb.PackageVersion{Package: pkgID, Version: string(version)},
 	}})
 	for {
 		ev, err := stream.Recv()
@@ -227,27 +228,27 @@ func (c *Client) change(
 }
 
 // handle shows ev and reports whether it is the host's done.
-func (c *Client) handle(s *answerStream, ev *ChangeEvent, pw repl.ProgressWriter) bool {
+func (c *Client) handle(s *answerStream, ev *pkgrpcpb.ChangeEvent, pw repl.ProgressWriter) bool {
 	switch e := ev.GetEvent().(type) {
-	case *ChangeEvent_Progress:
+	case *pkgrpcpb.ChangeEvent_Progress:
 		pw.Progress(e.Progress.GetProgress(), e.Progress.GetTotal(), e.Progress.GetUnits())
-	case *ChangeEvent_Notice:
+	case *pkgrpcpb.ChangeEvent_Notice:
 		c.notify(e.Notice)
-	case *ChangeEvent_Prompt:
+	case *pkgrpcpb.ChangeEvent_Prompt:
 		c.prompt(s, e.Prompt)
-	case *ChangeEvent_Done:
+	case *pkgrpcpb.ChangeEvent_Done:
 		return true
 	}
 	return false
 }
 
-func (c *Client) prompt(s *answerStream, p *Prompt) {
+func (c *Client) prompt(s *answerStream, p *pkgrpcpb.Prompt) {
 	id := p.GetId()
 	c.ui.PromptConfig(promptFromProto(p), func(approved bool) {
 		// The answer may be given on the UI's event loop.
 		go debug.CapturePanicReport(func() {
-			err := s.send(&ChangeRequest{Request: &ChangeRequest_Answer{
-				Answer: &Answer{Prompt: id, Approved: approved},
+			err := s.send(&pkgrpcpb.ChangeRequest{Request: &pkgrpcpb.ChangeRequest_Answer{
+				Answer: &pkgrpcpb.Answer{Prompt: id, Approved: approved},
 			}})
 			if err != nil && approved {
 				_, _ = c.ui.Notify(browserapi.LevelError,
@@ -257,7 +258,7 @@ func (c *Client) prompt(s *answerStream, p *Prompt) {
 	})
 }
 
-func (c *Client) notify(n *Notice) {
+func (c *Client) notify(n *pkgrpcpb.Notice) {
 	level := browserapi.NotificationLevel(n.GetLevel())
 	if n.GetOnce() {
 		_, _ = c.ui.NotifyOnce(level, "%s", n.GetMessage())
@@ -273,7 +274,7 @@ type answerStream struct {
 	stream changeClientStream
 }
 
-func (s *answerStream) send(req *ChangeRequest) error {
+func (s *answerStream) send(req *pkgrpcpb.ChangeRequest) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.stream.Send(req)

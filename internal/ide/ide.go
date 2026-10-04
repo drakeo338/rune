@@ -478,6 +478,13 @@ func (i *IDE) SetReleaseManager(m release.Manager) {
 	i.workspaceHandler.setReleaseManager(m)
 }
 
+// PackageManager manages this machine's packages for other machines to
+// install through. Unlike the editor's own lookups, a missing package
+// is reported as not installed rather than offered for install.
+func (i *IDE) PackageManager() idepkg.PackageManager {
+	return i.workspaceHandler.pkgmanager.pkg
+}
+
 // Notifications returns an cross-workspace, goroutine-safe implementation
 // of browserapi.Notifications.
 func (i *IDE) Notifications() browserapi.Notifications {

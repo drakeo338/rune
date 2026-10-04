@@ -18,9 +18,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v6.33.4
-// source: pkgrpc/pkgrpc.proto
+// source: pkgrpcpb/pkgrpc.proto
 
-package pkgrpc
+package pkgrpcpb
 
 import (
 	context "context"
@@ -611,5 +611,5 @@ var PackageManager_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "pkgrpc/pkgrpc.proto",
+	Metadata: "pkgrpcpb/pkgrpc.proto",
 }

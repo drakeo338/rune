@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/unstablebuild/rune-go-sdk/api/debugapi"
 	"github.com/unstablebuild/rune-go-sdk/api/workspaceapi"
+	"github.com/unstablebuild/rune-go-sdk/iterator"
 	rdebug "unstable.build/rune/internal/debug"
 )
 
@@ -46,6 +47,30 @@ func newTestManager(t *testing.T) *Manager {
 	uri, err := workspaceapi.ParseURI("file:///tmp/test")
 	require.NoError(t, err)
 	return New(uri, nil, nil, Config{})
+}
+
+type libDirPkgManager struct{ paths []string }
+
+func (p libDirPkgManager) LibDir(context.Context, string) (iterator.Iterator[string], error) {
+	return iterator.FromSlice(p.paths), nil
+}
+
+// TestFindBinaryRunsTheHostBinary covers a workspace on another
+// machine: its lib dir lists paths on that machine, which do not exist
+// here, and the adapter is still started from them.
+func TestFindBinaryRunsTheHostBinary(t *testing.T) {
+	t.Parallel()
+	const hostPath = "/home/studio/.rune/pkg/go/1.24.0/bin/dlv"
+	uri, err := workspaceapi.ParseURI("file:///tmp/test")
+	require.NoError(t, err)
+	m := New(uri, nil, libDirPkgManager{paths: []string{
+		"/home/studio/.rune/pkg/go/1.24.0/bin/go", hostPath,
+	}}, Config{})
+	t.Cleanup(func() { _ = m.Close() })
+
+	got, err := m.findBinary(t.Context(), &debugConfig{langID: "go", command: "dlv"})
+	require.NoError(t, err)
+	assert.Equal(t, hostPath, got)
 }
 
 // TestSessionIDRequired verifies that every method returns

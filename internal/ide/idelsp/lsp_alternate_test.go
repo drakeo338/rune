@@ -24,6 +24,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/unstablebuild/rune-go-sdk/api/semanticapi"
 	"github.com/unstablebuild/rune-go-sdk/iterator"
 )
 
@@ -199,4 +200,21 @@ func TestFindBinaryDisambiguatesByCommand(t *testing.T) {
 	ruffBin, err := m.findBinary(t.Context(), &langConfig{id: "python", command: "ruff"})
 	require.NoError(t, err)
 	assert.Equal(t, ruffPath, ruffBin)
+}
+
+// TestBuildChildRunsTheHostBinary covers a workspace on another
+// machine: its lib dir lists paths on that machine, which do not exist
+// here, and the server is still started from them.
+func TestBuildChildRunsTheHostBinary(t *testing.T) {
+	t.Parallel()
+	const hostPath = "/home/studio/.rune/pkg/go/1.24.0/bin/gopls"
+	uri := makeURI(t, "file:///workspace")
+	m := New(uri, nil, nil,
+		&multiBinPkgManager{paths: []string{"/home/studio/.rune/pkg/go/1.24.0/bin/go", hostPath}},
+		nil, nil, Config{NoInitializeServer: true})
+	t.Cleanup(func() { _ = m.Close() })
+
+	srv := m.buildChild(t.Context(), langConfig{id: "go", command: "gopls"},
+		"gopls", uri.String(), semanticapi.InitializeParams{})
+	assert.Equal(t, hostPath, srv.binPath)
 }

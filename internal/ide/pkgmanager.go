@@ -38,6 +38,7 @@ import (
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/ide/gitpkg"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
 	"unstable.build/rune/internal/ide/multipkg"
 	"unstable.build/rune/internal/ide/pkgtrust"
 	"unstable.build/rune/internal/text"
@@ -153,6 +154,10 @@ func (m *pkgManager) LibDir(ctx context.Context, pkgID string) (
 	sdkiterator.Iterator[string], error,
 ) {
 	it, err := m.pm.LibDir(ctx, pkgID)
+	if errors.Is(err, pkgrpc.ErrUnsupported) {
+		m.notifyUnsupported()
+		return nil, storageapi.ErrNotFound
+	}
 	if err == nil || !errors.Is(err, idepkg.ErrNotInstalled) {
 		return it, err
 	}
@@ -189,6 +194,12 @@ func (m *pkgManager) LibDir(ctx context.Context, pkgID string) (
 		return m.installLatest(ctx, pkgID, version)
 	}
 	return m.openInstallPrompt(pkgID, version)
+}
+
+// notifyUnsupported tells the user that the host runs a Rune too old
+// to install packages on.
+func (m *pkgManager) notifyUnsupported() {
+	_, _ = m.n.NotifyOnce(browserapi.LevelWarn, "%s", pkgrpc.UpdateHostMessage(m.host))
 }
 
 func (m *pkgManager) installLatest(

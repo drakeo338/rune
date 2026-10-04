@@ -26,6 +26,7 @@ package pkgshell
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -35,6 +36,7 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/iterator"
 	"unstable.build/rune/internal/component/markdown"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
 )
 
 // CommandName is the top-level REPL command exposed by this shell.
@@ -99,11 +101,15 @@ type Config struct {
 	// Manager backs every subcommand. Packages are installed on the
 	// host it manages, without prompting. It must not be nil.
 	Manager idepkg.PackageManager
+	// Host names the machine Manager manages in messages to the user.
+	// It is empty for this machine.
+	Host string
 }
 
 // Handler is the dispatcher for the `pkg` command tree.
 type Handler struct {
-	mgr idepkg.PackageManager
+	mgr  idepkg.PackageManager
+	host string
 }
 
 var _ textapi.REPLHandler = (*Handler)(nil)
@@ -114,7 +120,7 @@ func New(cfg Config) *Handler {
 	if cfg.Manager == nil {
 		panic("pkgshell: Config.Manager must not be nil")
 	}
-	return &Handler{mgr: cfg.Manager}
+	return &Handler{mgr: cfg.Manager, host: cfg.Host}
 }
 
 var subcommandNames = []string{
@@ -124,6 +130,16 @@ var subcommandNames = []string{
 // HandleCommand satisfies repl.CommandHandler. The shell splits the
 // first arg and routes to the matching subcommand handler.
 func (h *Handler) HandleCommand(
+	ctx context.Context, cmd repl.Command, pw repl.ProgressWriter,
+) (iterator.Iterator[component.Responsive], error) {
+	it, err := h.handleCommand(ctx, cmd, pw)
+	if errors.Is(err, pkgrpc.ErrUnsupported) {
+		return nil, errors.New(pkgrpc.UpdateHostMessage(h.host))
+	}
+	return it, err
+}
+
+func (h *Handler) handleCommand(
 	ctx context.Context, cmd repl.Command, pw repl.ProgressWriter,
 ) (iterator.Iterator[component.Responsive], error) {
 	if len(cmd.Args) == 0 {

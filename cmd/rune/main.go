@@ -57,6 +57,7 @@ import (
 	"unstable.build/rune/internal/extension/extensionv2"
 	"unstable.build/rune/internal/ide"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
 	"unstable.build/rune/internal/ide/pkgtrust"
 	"unstable.build/rune/internal/llm/llmrpc"
 	"unstable.build/rune/internal/rpc"
@@ -278,6 +279,15 @@ func startWorkspaceServer() int {
 	}
 	defer scheme.Close()
 	provisionRemote(scheme, uri)
+
+	// The client installs the packages its workspace needs on this host
+	// through this manager, served next to the workspace.
+	pkgs, pkgStorage := newHostPackageManager(newRuneStorage(*flagDataPath),
+		scheme, func() { loadRemoteConfigAndApplyEnv(scheme, uri) })
+	defer func() {
+		_ = pkgStorage.Close()
+	}()
+	pkgrpc.NewServer(pkgs).Register(grpcServer)
 
 	server := workspacerpc.NewServer(scheme,
 		workspacerpc.CommandAuthorizerFunc(
