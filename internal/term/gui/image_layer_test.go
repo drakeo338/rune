@@ -138,9 +138,6 @@ func TestCropRect(t *testing.T) {
 	}
 }
 
-// TestImageLayerTextureReuse asserts pixel identity is (ID, Version):
-// re-placing the same picture reuses the upload, and bumping Version
-// replaces it.
 func TestImageLayerTextureReuse(t *testing.T) {
 	benchdraw.BeginFrame(t)
 	defer benchdraw.EndFrame(t)
@@ -178,9 +175,6 @@ func TestImageLayerTextureRejectsEmptySource(t *testing.T) {
 	assert.Empty(t, l.textures)
 }
 
-// TestImageLayerEvictsUnplacedPictures asserts a picture that stops
-// being placed releases its texture on the next frame, so retained
-// pixels do not outlive the content that drew them.
 func TestImageLayerEvictsUnplacedPictures(t *testing.T) {
 	m := testFontManager(t)
 	dst := ebiten.NewImage(200, 200)
@@ -224,8 +218,6 @@ func drawFrame(
 	l.evictUnused()
 }
 
-// TestImageLayerDrawSkipsInvisiblePlacements asserts placements that
-// cover nothing never reach the GPU, so they cost no upload.
 func TestImageLayerDrawSkipsInvisiblePlacements(t *testing.T) {
 	m := testFontManager(t)
 	dst := ebiten.NewImage(200, 200)
@@ -280,9 +272,6 @@ func TestImageLayerDrawSkipsInvisiblePlacements(t *testing.T) {
 	}
 }
 
-// TestResolvePlacement asserts the pixel geometry a placement resolves
-// to: where the picture lands, which texels it samples, and how the
-// clip and the pixel offset narrow or move it.
 func TestResolvePlacement(t *testing.T) {
 	m := testFontManager(t)
 	bounds := image.Rect(0, 0, 2000, 2000)
@@ -354,10 +343,6 @@ func TestResolvePlacement(t *testing.T) {
 	}
 }
 
-// TestResolvePlacementClipNarrowsPainting asserts a clipped placement
-// still scales as if unclipped and only narrows what is painted. That
-// is what lets a scrolled pane hide part of a picture without the
-// caller re-cropping it.
 func TestResolvePlacementClipNarrowsPainting(t *testing.T) {
 	m := testFontManager(t)
 	bounds := image.Rect(0, 0, 2000, 2000)
@@ -376,8 +361,6 @@ func TestResolvePlacementClipNarrowsPainting(t *testing.T) {
 	assert.Equal(t, image.Rect(0, 0, 8, 8), p.src, "the crop is unchanged")
 }
 
-// TestResolvePlacementContainPreservesAspect asserts ImageFitContain
-// scales uniformly and centres the result in the cell rectangle.
 func TestResolvePlacementContainPreservesAspect(t *testing.T) {
 	m := testFontManager(t)
 	bounds := image.Rect(0, 0, 2000, 2000)
@@ -399,8 +382,6 @@ func TestResolvePlacementContainPreservesAspect(t *testing.T) {
 		"the fitted rectangle is centred horizontally")
 }
 
-// TestImageLayerDeallocateReleasesTextures asserts a resize, which
-// rebuilds the renderer, does not leak the retained uploads.
 func TestImageLayerDeallocateReleasesTextures(t *testing.T) {
 	benchdraw.BeginFrame(t)
 	var l imageLayer
@@ -415,9 +396,6 @@ func TestImageLayerDeallocateReleasesTextures(t *testing.T) {
 	assert.Nil(t, l.scratch)
 }
 
-// TestDrawImageLayerPartitions asserts each layer paints only its own
-// placements and reports the pixels they covered, which is what the
-// renderer repaints the cell geometry over.
 func TestDrawImageLayerPartitions(t *testing.T) {
 	r, _, _ := newTestRenderer(t, 16, 10)
 	screen := ebiten.NewImage(r.frame.Bounds().Dx(), r.frame.Bounds().Dy())
@@ -449,9 +427,6 @@ func TestDrawImageLayerPartitions(t *testing.T) {
 	assert.Len(t, r.images.textures, 2, "each placement uploaded its own picture")
 }
 
-// TestRowsCovering asserts the rows repainted over a placement include
-// the neighbours of the rows it covers, because vertical-offset cells
-// paint outside their own strip.
 func TestRowsCovering(t *testing.T) {
 	r, _, rows := newTestRenderer(t, 16, 10)
 	m := r.fontManager
@@ -469,10 +444,6 @@ func TestRowsCovering(t *testing.T) {
 	assert.Equal(t, rows-1, last, "clamped to the last row")
 }
 
-// TestDrawImageLayerVerticalRenderOffset asserts a placement moves down
-// or up with the cells that carry a vertical render offset, the way those
-// cells move, exactly when it asks to, whatever cells it covers, and that
-// every piece of it the cells written over it cut moves the same.
 func TestDrawImageLayerVerticalRenderOffset(t *testing.T) {
 	r, cols, rows := newTestRenderer(t, 16, 10)
 	half := int(r.halfCell())
@@ -557,10 +528,6 @@ func TestDrawImageLayerVerticalRenderOffset(t *testing.T) {
 	}
 }
 
-// TestDrawImageLayerOffset asserts an offset placement is painted Offset
-// device pixels away from its cells, wherever those are, and that it is
-// confined to its clip and cut by the cells written over the cells it
-// lands on, not the ones it started on.
 func TestDrawImageLayerOffset(t *testing.T) {
 	r, cols, rows := newTestRenderer(t, 16, 10)
 	m := r.fontManager

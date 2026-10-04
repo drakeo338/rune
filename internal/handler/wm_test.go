@@ -132,10 +132,6 @@ func (h *overflowHandler) Draw(w term.Writer) {
 	}
 }
 
-// TestWindowManagerOverflowingImages asserts what images that overflow
-// their window show of the windows around it. The images are solid and
-// stretched over their cells, so the cells each one shows are those with
-// its letter: a and 6 for two shades of grey.
 func TestWindowManagerOverflowingImages(t *testing.T) {
 	gray := func(y uint8) image.Image {
 		img := image.NewNRGBA(image.Rect(0, 0, 4, 4))
@@ -367,7 +363,6 @@ func testWindowManagerSetFocus(t *testing.T, frame bool) {
 	assert.True(t, ok)
 }
 
-// TestHandler signals that it's handling event by incrementing it's fill rune
 func TestWindowManagerHandle(t *testing.T) {
 	t.Run("passes correct mouse position", func(t *testing.T) {
 		handler := handler.NewTestHandler()
@@ -646,8 +641,6 @@ func TestWindowManagerSetFocusContent(t *testing.T) {
 	handlertest.TestHandler(t, wm, cases, writer)
 }
 
-// TestWindowManagerMouseDrag exercises WindowManager.Handle mouse
-// routing across drag-capture, focus-switch, and non-drag paths.
 func TestWindowManagerMouseDrag(t *testing.T) {
 	cases := []dragCase{
 		{
@@ -955,11 +948,6 @@ func TestWindowManagerMouseDrag(t *testing.T) {
 	}
 }
 
-// TestWindowManagerMouseDragSurvivesPinnedWindowClose reproduces a nil
-// pointer dereference: a MouseLeft press pins the pressed window as the
-// drag target, that window is then closed (e.g. programmatically by a
-// runner), and a follow-up drag event re-routes to the now-removed
-// window. Calling Position on a removed tile dereferenced a nil tree.
 func TestWindowManagerMouseDragSurvivesPinnedWindowClose(t *testing.T) {
 	width, height := 24, 8
 	lh := handler.NewTestHandler()
@@ -982,9 +970,6 @@ func TestWindowManagerMouseDragSurvivesPinnedWindowClose(t *testing.T) {
 	})
 }
 
-// TestWindowManagerMouseUnderFocusedFloat pins that a focused floating
-// window keeps the wheel and pointer motion from reaching the tiles it
-// floats over, which would move content out from under it.
 func TestWindowManagerMouseUnderFocusedFloat(t *testing.T) {
 	lh := handler.NewTestHandler()
 	rh := handler.NewTestHandler()
@@ -1011,9 +996,6 @@ func TestWindowManagerMouseUnderFocusedFloat(t *testing.T) {
 	assert.Equal(t, []string{"F"}, seen)
 }
 
-// TestWindowManagerMouseExitFromUnfocusedWindow pins that a tile asking
-// to exit on a wheel event it received without focus is closed, and
-// that focus stays on the tile the user was working in.
 func TestWindowManagerMouseExitFromUnfocusedWindow(t *testing.T) {
 	lh := handler.NewTestHandler()
 	rh := handler.NewTestHandler()
@@ -1185,11 +1167,6 @@ func TestWindowManagerCloseFloatingSkipsMinimizedFloatingFocus(t *testing.T) {
 	assert.True(t, ok)
 }
 
-// TestWindowManagerCloseSkipsClosedPrevFocus exercises the case where, after
-// successive window closes, prevFocus points to a window that is no longer
-// alive. Close must not select such a stale window as the next focus, or
-// WindowManager.Focus() will return a closed Window and downstream
-// browser.Component.findWindow will fail to resolve it.
 func TestWindowManagerCloseSkipsClosedPrevFocus(t *testing.T) {
 	cfg := DefaultWindowManagerConfig()
 	wm := NewWindowManager(handler.NewTestHandler(), cfg)
@@ -1219,13 +1196,6 @@ func TestWindowManagerCloseSkipsClosedPrevFocus(t *testing.T) {
 		"focus should point to a live window, not a closed one")
 }
 
-// TestWindowManagerRestoreTileLayoutResetsPrevFocus ensures that a layout
-// restore does not leave prevFocus pointing at a closed window. Before this
-// fix, SetFocus stored the stale pre-restore focus into prevFocus; once the
-// user closed the new focus, Close.prevFocus fallback path restored the
-// stale window, causing WindowManager.Focus() to return a closed Window and
-// downstream browser.Component.findWindow to panic with
-// "corrupted browser: cannot find focus window".
 func TestWindowManagerRestoreTileLayoutResetsPrevFocus(t *testing.T) {
 	cfg := DefaultWindowManagerConfig()
 	wm := NewWindowManager(handler.NewTestHandler(), cfg)
@@ -1265,12 +1235,6 @@ func TestWindowManagerRestoreTileLayoutResetsPrevFocus(t *testing.T) {
 		"WindowManager.Focus() must resolve to a window that is still in the tree")
 }
 
-// TestWindowManagerRestoreTileLayoutEmptyLayout exercises the case where
-// RestoreTileLayout is invoked with an empty layout (a leaf layout
-// with WindowID == 0). Without a fallback, the old pre-restore
-// wm.focus would survive and point at a now-discarded node,
-// causing Iterate to skip it and downstream callers (such as
-// browser.Component.focus) to panic with "cannot find focus window".
 func TestWindowManagerRestoreTileLayoutEmptyLayout(t *testing.T) {
 	cfg := DefaultWindowManagerConfig()
 	wm := NewWindowManager(handler.NewTestHandler(), cfg)
@@ -2498,8 +2462,6 @@ func TestFloatingBarDragLifecycle(t *testing.T) {
 	}
 }
 
-// TestFloatingBarMinimizedFloat pins that a minimized float's strip is
-// inert: it starts no drag, so no bar interaction is ever reported.
 func TestFloatingBarMinimizedFloat(t *testing.T) {
 	bar := &testFloatingBar{}
 	wm, float := prepareFloatingBarTest(t, bar)
@@ -2559,10 +2521,6 @@ func (b *closingFloatingBar) OnBarDragCancel(Window) {
 	}
 }
 
-// TestFloatingBarCancelMayCloseWindows pins that the cancel hook is
-// allowed to change the layout: Handle resolves the window under the
-// cursor before the hook runs, and reusing that resolution afterwards
-// dereferences a detached tile.
 func TestFloatingBarCancelMayCloseWindows(t *testing.T) {
 	bar := &closingFloatingBar{}
 	cfg := DefaultWindowManagerConfig()
@@ -2590,8 +2548,6 @@ func TestFloatingBarCancelMayCloseWindows(t *testing.T) {
 	assert.Equal(t, 1, wm.SizeTiles())
 }
 
-// TestFloatingBarNilIsInert guards the nil FloatingBar default: the
-// drag machinery must not dereference the hook.
 func TestFloatingBarNilIsInert(t *testing.T) {
 	wm, _, _, _, floatWin := prepareWindowBarTest(t)
 	require.Nil(t, wm.config.FloatingBar)
@@ -2603,8 +2559,6 @@ func TestFloatingBarNilIsInert(t *testing.T) {
 	assert.False(t, floatWin.Closed())
 }
 
-// TestNopFloatingBarHandler pins the embeddable default so partial
-// implementors inherit inert, non-consuming behaviour.
 func TestNopFloatingBarHandler(t *testing.T) {
 	var nop NopFloatingBarHandler
 	assert.False(t, nop.OnBarClose(Window{}),
@@ -2615,9 +2569,6 @@ func TestNopFloatingBarHandler(t *testing.T) {
 	nop.OnBarDragCancel(Window{})
 }
 
-// TestFloatingBarDragReportsPositionAfterMove pins that OnBarDrag is
-// dispatched after the window has been repositioned, so a handler can
-// measure the float against the cursor it was given.
 func TestFloatingBarDragReportsPositionAfterMove(t *testing.T) {
 	bar := &testFloatingBar{}
 	wm, float := prepareFloatingBarTest(t, bar)
@@ -2691,9 +2642,6 @@ func TestWindowEdgeResizeDrag(t *testing.T) {
 	})
 }
 
-// TestWindowBarCornerResizeDrag covers the diagonal resize drags
-// started from the bar's corner cells: both dimensions change and the
-// opposite edges stay pinned.
 func TestWindowBarCornerResizeDrag(t *testing.T) {
 	t.Run("top-right corner grows both dimensions", func(t *testing.T) {
 		wm, _, _, _, floatWin := prepareWindowBarTest(t)
@@ -2739,8 +2687,6 @@ func TestWindowBarCornerResizeDrag(t *testing.T) {
 	})
 }
 
-// TestWindowBarDoubleClickMaximize covers the bar double click
-// toggling a float between maximized and its previous geometry.
 func TestWindowBarDoubleClickMaximize(t *testing.T) {
 	click := func(wm *WindowManager, x, y int) {
 		wm.Handle(mouseEv(term.MouseLeft, x, y))
@@ -2812,9 +2758,6 @@ func TestTileEdgeResizeDrag(t *testing.T) {
 	})
 }
 
-// TestWindowBarScrollBarPrecedence pins that pressing the scroll bar
-// thumb on a window's right edge starts a scroll drag rather than an
-// edge resize.
 func TestWindowBarScrollBarPrecedence(t *testing.T) {
 	buf := cell.NewBuffer()
 	buf.WriteString("a\nb\nc\nd\ne\nf\n")

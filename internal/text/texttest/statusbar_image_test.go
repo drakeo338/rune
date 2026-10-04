@@ -53,9 +53,6 @@ import (
 	"unstable.build/rune/internal/text"
 )
 
-// TestStatusBarImage asserts where an image is drawn on the bar. The
-// ASCII art writer takes a cell to span 10x23 pixels, so it moves an
-// image by the whole cells its pixel offsets round to.
 func TestStatusBarImage(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
@@ -263,10 +260,6 @@ third line
 	}
 }
 
-// TestStatusBarImageZIndex asserts how images stack with the bar's text,
-// the editor's text and each other. Most images are solid and stretched
-// over their cells, so the cells each one shows are those with its
-// letter: a, 6 and = for three shades of grey.
 func TestStatusBarImageZIndex(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
@@ -614,8 +607,6 @@ func onBar(bar string) string {
 	return frame("first line", "second line", "third line", bar)
 }
 
-// TestStatusBarImageOverflow asserts what an image shows past the editor
-// and its bar, which are surrounded by dots.
 func TestStatusBarImageOverflow(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
@@ -744,9 +735,6 @@ const (
 	screenHeight = imageBarHeight + 4
 )
 
-// TestStatusBarImageMovesWithTheBar asserts every image asks to be moved
-// with the bar, which renderers may draw half a cell down, wherever it is
-// placed and whether or not it overflows.
 func TestStatusBarImageMovesWithTheBar(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
@@ -794,11 +782,6 @@ func (w *placementRecorder) DrawImage(img term.Image) bool {
 	return w.StringerWriter.DrawImage(img)
 }
 
-// TestStatusBarImageOffset asserts the placement the bar draws: cell
-// offsets move its cells, pixel offsets are left for the writer that
-// owns the surface to resolve, and an image with pixel offsets is
-// confined to the bar, not to the cells it is placed on, which the writer
-// moves it off.
 func TestStatusBarImageOffset(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
@@ -956,8 +939,6 @@ func encodePNG(t *testing.T, img image.Image) []byte {
 	return buf.Bytes()
 }
 
-// TestStatusBarImageSharesDownloads asserts the bars of every open file
-// download an image once, as long as they share storage.
 func TestStatusBarImageSharesDownloads(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 

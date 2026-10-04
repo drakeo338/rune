@@ -33,9 +33,6 @@ import (
 	"unstable.build/rune/internal/handler/handlertest"
 )
 
-// TestStatusBarImageIntegration configures the editor's status bar with
-// two translucent HUD overlays whose emblems partially cover the status
-// on the left of the bar and the language on its right.
 func TestStatusBarImageIntegration(t *testing.T) {
 	const width = 60
 	tests := []struct {

@@ -268,9 +268,6 @@ func TestStringWriterResize(t *testing.T) {
 @@@@@@@#;ccc`}})
 }
 
-// TestStringWriterOffset asserts an offset placement moves by the whole
-// cells of a nominal 10x23 pixel cell its offset rounds to, and that its
-// Clip, which the offset does not move, still confines it.
 func TestStringWriterOffset(t *testing.T) {
 	at := func(offset image.Point, clip image.Rectangle) term.Image {
 		return term.Image{
@@ -383,10 +380,6 @@ aaa.........
 	}
 }
 
-// TestStringWriterComposesPlacements asserts the writer shows what a
-// compositing writer would where placements overlap: the one on the
-// highest layer, the latest drawn of those on the same layer, and what
-// is under its fully transparent pixels.
 func TestStringWriterComposesPlacements(t *testing.T) {
 	// a, b and c encode as rows of 'a', '6' and '=' respectively.
 	a, b, c := solidGray(128), solidGray(200), solidGray(80)
@@ -511,8 +504,6 @@ func TestStringWriterComposesPlacements(t *testing.T) {
 	}
 }
 
-// TestStringWriterComposesAfterClear asserts a Clear forgets the
-// placements of the previous frame.
 func TestStringWriterComposesAfterClear(t *testing.T) {
 	w := NewStringWriter(4, 1, DefaultConfig())
 	w.DrawImage(term.Image{Src: solidGray(128), Width: 4, Height: 1, Fit: term.ImageFitFill})
