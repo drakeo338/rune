@@ -277,8 +277,8 @@ func WithBell(bell func()) Option {
 	}
 }
 
-// WithScheduleNextTick sets the default mechanism to schedule a user functio to run before
-// the next event loop tick.
+// WithScheduleNextTick sets how the IDE runs a function on the event loop.
+// scheduleFn returns true only if the function will run exactly once.
 func WithScheduleNextTick(scheduleFn func(func()) bool) Option {
 	return func(opts *options) {
 		opts.scheduleFn = scheduleFn

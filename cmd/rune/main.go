@@ -820,8 +820,8 @@ func runGUI(
 		log.Errorf("gui: %v", err)
 		return 1
 	}
-	defer func() { _ = g.Close() }()
 	defer func() { _ = root.Close() }()
+	defer func() { _ = g.Close() }()
 	guiRef.Store(g)
 	root.attachGUI(g, transparentWindow)
 	defer watchGUISignals(publishEvent,

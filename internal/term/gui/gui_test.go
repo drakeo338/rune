@@ -22,6 +22,7 @@ import (
 	"image/color"
 	"math"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -362,6 +363,116 @@ func TestUpdate(t *testing.T) {
 
 		input.events = action(press(ebiten.KeyEnter))
 		require.Equal(t, ErrHandlerExited, gui.Update())
+	})
+}
+
+func TestPublishEventSchedulesUserFunc(t *testing.T) {
+	t.Run("a tick the loop never picked up runs on Close", func(t *testing.T) {
+		var mu sync.Mutex
+		gui := newLockedTestGUI(t, &mu)
+		var runs int
+		var locked bool
+		require.True(t, gui.PublishEvent(term.Event{Type: term.EventInterrupt, UserFunc: func() {
+			runs++
+			locked = !mu.TryLock()
+			if !locked {
+				mu.Unlock()
+			}
+		}}))
+		require.NoError(t, gui.Close())
+		assert.Equal(t, 1, runs)
+		assert.True(t, locked, "a tick runs under the UI lock")
+		require.NoError(t, gui.Close())
+		assert.Equal(t, 1, runs)
+	})
+
+	t.Run("a tick queued behind the exiting event runs on Close", func(t *testing.T) {
+		var handled int
+		gui, _ := newTestGUI(t, &mockHandler{
+			assertDraw: func(term.Writer) {},
+			assertEvent: func(term.Event) (bool, bool) {
+				handled++
+				return true, true
+			},
+		})
+		var runs int
+		require.True(t, gui.PublishEvent(term.Event{Type: term.EventKey, Ch: 'q', Raw: []byte("q")}))
+		require.True(t, gui.PublishEvent(term.Event{
+			Type: term.EventInterrupt, UserFunc: func() { runs++ },
+		}))
+		require.ErrorIs(t, gui.Update(), ErrHandlerExited)
+		require.Zero(t, runs)
+		require.NoError(t, gui.Close())
+		assert.Equal(t, 1, runs)
+		assert.Equal(t, 1, handled, "Close must not redeliver the exiting event")
+	})
+
+	t.Run("Close rejects events", func(t *testing.T) {
+		var runs int
+		tests := []struct {
+			name string
+			ev   term.Event
+		}{
+			{name: "user func", ev: term.Event{
+				Type: term.EventInterrupt, UserFunc: func() { runs++ },
+			}},
+			{name: "key", ev: term.Event{Type: term.EventKey, Ch: 'a', Raw: []byte("a")}},
+		}
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				gui, _ := newTestGUI(t, &mockHandler{assertDraw: func(term.Writer) {}})
+				require.NoError(t, gui.Close())
+				assert.False(t, gui.PublishEvent(tc.ev))
+			})
+		}
+		assert.Zero(t, runs)
+	})
+
+	t.Run("a tick run on Close cannot schedule another", func(t *testing.T) {
+		gui, _ := newTestGUI(t, &mockHandler{assertDraw: func(term.Writer) {}})
+		rescheduled, ran := true, false
+		require.True(t, gui.PublishEvent(term.Event{Type: term.EventInterrupt, UserFunc: func() {
+			rescheduled = gui.PublishEvent(term.Event{
+				Type: term.EventInterrupt, UserFunc: func() { ran = true },
+			})
+		}}))
+		require.NoError(t, gui.Close())
+		assert.False(t, rescheduled)
+		assert.False(t, ran)
+	})
+
+	t.Run("publishers racing Close", func(t *testing.T) {
+		gui, _ := newTestGUI(t, &mockHandler{assertDraw: func(term.Writer) {}})
+		const publishers, ticks = 8, 100
+		var runs [publishers][ticks]atomic.Int32
+		var accepted [publishers][ticks]bool
+		var wg sync.WaitGroup
+		start := make(chan struct{})
+		for p := range publishers {
+			wg.Add(1)
+			go debug.CapturePanicReport(func() {
+				defer wg.Done()
+				<-start
+				for i := range ticks {
+					accepted[p][i] = gui.PublishEvent(term.Event{
+						Type: term.EventInterrupt, UserFunc: func() { runs[p][i].Add(1) },
+					})
+				}
+			})
+		}
+		close(start)
+		require.NoError(t, gui.Close())
+		wg.Wait()
+		for p := range publishers {
+			for i := range ticks {
+				want := int32(0)
+				if accepted[p][i] {
+					want = 1
+				}
+				require.Equal(t, want, runs[p][i].Load(),
+					"publisher %d tick %d accepted=%v", p, i, accepted[p][i])
+			}
+		}
 	})
 }
 
