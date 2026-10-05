@@ -126,18 +126,14 @@ RELEASE_FILES=$(wildcard release/*)
 	rune-linux-cross-compile rune-app-amd64 rune-app-arm64 \
 	rune-staging-app-arm64 \
 	rune-dmg rune-dmg-amd64 rune-dmg-notarize rune-dmg-amd64-notarize rune-release-all \
-	rune-agent-pkg rune-agent-sign rune-agent-notarize \
+	rune-agent-pkg \
 	rune-agent-prod-dist rune-agent-staging-dist \
-	rune-agent-prod-dist-notarized rune-agent-staging-dist-notarized \
-	rune-agent-linux-cross-compile \
 	rune-agent-release-linux-amd64 rune-agent-release-linux-arm64 \
-	rune-agent-release-linux-amd64-cross rune-agent-release-linux-arm64-cross \
 	rune-agent-prod-dist-linux-amd64 rune-agent-staging-dist-linux-amd64 \
 	rune-agent-prod-dist-linux-arm64 rune-agent-staging-dist-linux-arm64 \
-	rune-agent-prod-dist-linux-amd64-cross rune-agent-staging-dist-linux-amd64-cross \
-	rune-agent-prod-dist-linux-arm64-cross rune-agent-staging-dist-linux-arm64-cross \
 	rune-agent-prod-dist-darwin-amd64 rune-agent-staging-dist-darwin-amd64 \
 	rune-agent-prod-dist-darwin-arm64 rune-agent-staging-dist-darwin-arm64 \
+	rune-agent-prod-dist-all rune-agent-staging-dist-all \
 	fuzzy-search fuzzy-search-pkg \
 	fuzzy-search-prod-dist fuzzy-search-staging-dist \
 	fuzzy-search-linux-cross-compile \
@@ -562,38 +558,17 @@ runectl: $(BIN)/runectl
 rune-agent-pkg:
 	@$(MAKE) -C cmd/rune-agent pkg
 
-rune-agent-sign:
-	@$(MAKE) -C cmd/rune-agent sign
-
-rune-agent-notarize:
-	@$(MAKE) -C cmd/rune-agent notarize
-
 rune-agent-prod-dist: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,$(BLUECTL_HOST_OS)-$(BLUECTL_HOST_ARCH)) $(MAKE) -C cmd/rune-agent dist
 
 rune-agent-staging-dist: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,$(BLUECTL_HOST_OS)-$(BLUECTL_HOST_ARCH)) $(MAKE) -C cmd/rune-agent dist
 
-rune-agent-prod-dist-notarized: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,$(BLUECTL_HOST_OS)-$(BLUECTL_HOST_ARCH)) $(MAKE) -C cmd/rune-agent dist-notarized
-
-rune-agent-staging-dist-notarized: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,$(BLUECTL_HOST_OS)-$(BLUECTL_HOST_ARCH)) $(MAKE) -C cmd/rune-agent dist-notarized
-
-rune-agent-linux-cross-compile:
-	@$(MAKE) -C cmd/rune-agent linux-cross-compile
-
 rune-agent-release-linux-amd64:
 	@$(MAKE) -C cmd/rune-agent release-linux-amd64
 
 rune-agent-release-linux-arm64:
 	@$(MAKE) -C cmd/rune-agent release-linux-arm64
-
-rune-agent-release-linux-amd64-cross:
-	@$(MAKE) -C cmd/rune-agent release-linux-amd64-cross
-
-rune-agent-release-linux-arm64-cross:
-	@$(MAKE) -C cmd/rune-agent release-linux-arm64-cross
 
 rune-agent-prod-dist-linux-amd64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,linux-amd64) $(MAKE) -C cmd/rune-agent dist-linux-amd64
@@ -607,18 +582,6 @@ rune-agent-prod-dist-linux-arm64: clean
 rune-agent-staging-dist-linux-arm64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,linux-arm64) $(MAKE) -C cmd/rune-agent dist-linux-arm64
 
-rune-agent-prod-dist-linux-amd64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,linux-amd64) $(MAKE) -C cmd/rune-agent dist-linux-amd64-cross
-
-rune-agent-staging-dist-linux-amd64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,linux-amd64) $(MAKE) -C cmd/rune-agent dist-linux-amd64-cross
-
-rune-agent-prod-dist-linux-arm64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,linux-arm64) $(MAKE) -C cmd/rune-agent dist-linux-arm64-cross
-
-rune-agent-staging-dist-linux-arm64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,linux-arm64) $(MAKE) -C cmd/rune-agent dist-linux-arm64-cross
-
 rune-agent-prod-dist-darwin-amd64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,darwin-amd64) $(MAKE) -C cmd/rune-agent dist-darwin-amd64
 
@@ -630,6 +593,14 @@ rune-agent-prod-dist-darwin-arm64: clean
 
 rune-agent-staging-dist-darwin-arm64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,darwin-arm64) $(MAKE) -C cmd/rune-agent dist-darwin-arm64
+
+# Each target cleans first, so they run as separate makes one after another: as
+# prerequisites they would share a single clean and run at once under -j.
+rune-agent-prod-dist-all rune-agent-staging-dist-all:
+	@$(MAKE) $(@:%-all=%)-linux-amd64
+	@$(MAKE) $(@:%-all=%)-linux-arm64
+	@$(MAKE) $(@:%-all=%)-darwin-amd64
+	@$(MAKE) $(@:%-all=%)-darwin-arm64
 
 fuzzy-search: CGO_ENABLED=CGO_ENABLED=1
 fuzzy-search: $(BIN)/extension_fuzzy_search
