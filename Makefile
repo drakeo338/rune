@@ -136,15 +136,12 @@ RELEASE_FILES=$(wildcard release/*)
 	rune-agent-prod-dist-all rune-agent-staging-dist-all \
 	fuzzy-search fuzzy-search-pkg \
 	fuzzy-search-prod-dist fuzzy-search-staging-dist \
-	fuzzy-search-linux-cross-compile \
 	fuzzy-search-release-linux-amd64 fuzzy-search-release-linux-arm64 \
-	fuzzy-search-release-linux-amd64-cross fuzzy-search-release-linux-arm64-cross \
 	fuzzy-search-prod-dist-linux-amd64 fuzzy-search-staging-dist-linux-amd64 \
 	fuzzy-search-prod-dist-linux-arm64 fuzzy-search-staging-dist-linux-arm64 \
-	fuzzy-search-prod-dist-linux-amd64-cross fuzzy-search-staging-dist-linux-amd64-cross \
-	fuzzy-search-prod-dist-linux-arm64-cross fuzzy-search-staging-dist-linux-arm64-cross \
 	fuzzy-search-prod-dist-darwin-amd64 fuzzy-search-staging-dist-darwin-amd64 \
 	fuzzy-search-prod-dist-darwin-arm64 fuzzy-search-staging-dist-darwin-arm64 \
+	fuzzy-search-prod-dist-all fuzzy-search-staging-dist-all \
 	runectl-pkg runectl-sign runectl-notarize \
 	runectl-prod-dist runectl-staging-dist \
 	runectl-prod-dist-notarized runectl-staging-dist-notarized \
@@ -596,7 +593,8 @@ rune-agent-staging-dist-darwin-arm64: clean
 
 # Each target cleans first, so they run as separate makes one after another: as
 # prerequisites they would share a single clean and run at once under -j.
-rune-agent-prod-dist-all rune-agent-staging-dist-all:
+rune-agent-prod-dist-all rune-agent-staging-dist-all \
+fuzzy-search-prod-dist-all fuzzy-search-staging-dist-all:
 	@$(MAKE) $(@:%-all=%)-linux-amd64
 	@$(MAKE) $(@:%-all=%)-linux-arm64
 	@$(MAKE) $(@:%-all=%)-darwin-amd64
@@ -613,20 +611,11 @@ fuzzy-search-prod-dist: clean
 fuzzy-search-staging-dist: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,$(BLUECTL_HOST_OS)-$(BLUECTL_HOST_ARCH)) $(MAKE) -C cmd/extension_fuzzy_search dist
 
-fuzzy-search-linux-cross-compile:
-	@$(MAKE) -C cmd/extension_fuzzy_search linux-cross-compile
-
 fuzzy-search-release-linux-amd64:
 	@$(MAKE) -C cmd/extension_fuzzy_search release-linux-amd64
 
 fuzzy-search-release-linux-arm64:
 	@$(MAKE) -C cmd/extension_fuzzy_search release-linux-arm64
-
-fuzzy-search-release-linux-amd64-cross:
-	@$(MAKE) -C cmd/extension_fuzzy_search release-linux-amd64-cross
-
-fuzzy-search-release-linux-arm64-cross:
-	@$(MAKE) -C cmd/extension_fuzzy_search release-linux-arm64-cross
 
 fuzzy-search-prod-dist-linux-amd64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,linux-amd64) $(MAKE) -C cmd/extension_fuzzy_search dist-linux-amd64
@@ -639,18 +628,6 @@ fuzzy-search-prod-dist-linux-arm64: clean
 
 fuzzy-search-staging-dist-linux-arm64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,linux-arm64) $(MAKE) -C cmd/extension_fuzzy_search dist-linux-arm64
-
-fuzzy-search-prod-dist-linux-amd64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,linux-amd64) $(MAKE) -C cmd/extension_fuzzy_search dist-linux-amd64-cross
-
-fuzzy-search-staging-dist-linux-amd64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,linux-amd64) $(MAKE) -C cmd/extension_fuzzy_search dist-linux-amd64-cross
-
-fuzzy-search-prod-dist-linux-arm64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,linux-arm64) $(MAKE) -C cmd/extension_fuzzy_search dist-linux-arm64-cross
-
-fuzzy-search-staging-dist-linux-arm64-cross: clean
-	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,staging,linux-arm64) $(MAKE) -C cmd/extension_fuzzy_search dist-linux-arm64-cross
 
 fuzzy-search-prod-dist-darwin-amd64: clean
 	@BLUECTL_CONFIG_DIR=$(call BLUECTL_CONFIG,prod,darwin-amd64) $(MAKE) -C cmd/extension_fuzzy_search dist-darwin-amd64
