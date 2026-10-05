@@ -29,7 +29,7 @@ import (
 	sitter "github.com/tree-sitter/go-tree-sitter"
 	"github.com/unstablebuild/blue/iterator"
 	"unstable.build/rune/internal/extension"
-	"unstable.build/rune/internal/ide/syntax"
+	"unstable.build/rune/internal/ide/syntax/treesitter"
 )
 
 type parser struct {
@@ -60,7 +60,7 @@ func newParser(
 	logrus.Tracef("found files: %v", files)
 	for _, path := range files {
 		switch filepath.Base(path) {
-		case syntax.ParserFilename:
+		case treesitter.ParserFilename:
 			langfile = path
 		case queryFile:
 			// override path with absolute path
