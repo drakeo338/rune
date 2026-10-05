@@ -104,17 +104,17 @@ EXECSRC=$(wildcard cmd/**/*.go) $(wildcard cmd/**/**/*.go)
 EXECMAIN=$(wildcard cmd/*/main.go)
 EXECDIRS=$(sort $(dir $(EXECMAIN)))
 EXECS=$(patsubst cmd/%/,$(BIN)/%,$(EXECDIRS))
-SPECIAL_EXECS=$(BIN)/rune $(BIN)/rune-agent
-# Language extensions ship as cgo-free binaries so one build runs on every
-# supported glibc and macOS release. These link C libraries and are exempt:
+SPECIAL_EXECS=$(BIN)/rune
+# Language extensions and rune-agent ship as cgo-free binaries so one build runs on
+# every supported glibc and macOS release. These link C libraries and are exempt:
 # fuzzy search parses with tree-sitter, rtc captures audio and video.
-CGO_EXTENSIONS=$(BIN)/extension_fuzzy_search $(BIN)/extension_rtc
-NOCGO_EXTENSIONS=$(filter-out $(CGO_EXTENSIONS),$(filter $(BIN)/extension_%,$(EXECS)))
+CGO_EXECS=$(BIN)/extension_fuzzy_search $(BIN)/extension_rtc
+NOCGO_EXECS=$(filter-out $(CGO_EXECS),$(filter $(BIN)/extension_% $(BIN)/rune-agent,$(EXECS)))
 NOCGO_ENABLED=$(if $(RACE_FLAG),1,0)
 NOCGO_NOTE=$(if $(RACE_FLAG),,cgo off)
 NOCGO_ERROR=$(if $(RACE_FLAG),, without cgo)
-NOCGO_HELP=$(if $(RACE_FLAG),,add it to CGO_EXTENSIONS in the Makefile if it needs C libraries)
-GENERIC_EXECS=$(filter-out $(SPECIAL_EXECS) $(NOCGO_EXTENSIONS),$(EXECS))
+NOCGO_HELP=$(if $(RACE_FLAG),,add it to CGO_EXECS in the Makefile if it needs C libraries)
+GENERIC_EXECS=$(filter-out $(SPECIAL_EXECS) $(NOCGO_EXECS),$(EXECS))
 EXEC_PKGS=$(patsubst $(BIN)/%,./cmd/%,$(EXECS))
 RELEASE_EXEC_PKGS=$(EXEC_PKGS)
 GOMOCKS=$(wildcard **/**/*_gomock.go) $(wildcard **/*_gomock.go)
@@ -212,7 +212,6 @@ rune: CGO_ENABLED=CGO_ENABLED=1
 rune: GOPRIVATE=github.com/unstablebuild,unstable.build/*
 rune: $(BIN)/rune
 
-rune-agent: CGO_ENABLED=CGO_ENABLED=1
 rune-agent: GOPRIVATE=github.com/unstablebuild,unstable.build/*
 rune-agent: $(BIN)/rune-agent
 
@@ -327,14 +326,11 @@ $(BIN):
 $(BIN)/rune: $(EXECSRC) $(LIBSRC) $(BIN)
 	@$(call compile,$(CGO_ENABLED) $(GO) build $(RUNE_GOFLAGS) -o ../../$@)
 
-$(BIN)/rune-agent: $(EXECSRC) $(LIBSRC) $(BIN)
-	@$(call compile,$(CGO_ENABLED) $(GO) build $(GOFLAGS) -o ../../$@)
-
 $(GENERIC_EXECS): $(EXECSRC) $(LIBSRC) $(BIN)
 	@$(call compile,$(CGO_ENABLED) $(GO) build $(GOFLAGS) -o ../../$@)
 
 # The race detector of debug builds requires cgo on Linux.
-$(NOCGO_EXTENSIONS): $(EXECSRC) $(LIBSRC) $(BIN)
+$(NOCGO_EXECS): $(EXECSRC) $(LIBSRC) $(BIN)
 	@$(call compile,CGO_ENABLED=$(NOCGO_ENABLED) $(GO) build $(GOFLAGS) -o ../../$@,$(NOCGO_NOTE),$(NOCGO_ERROR),$(NOCGO_HELP))
 
 $(BIN)/runectl: $(BIN)
