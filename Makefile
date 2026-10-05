@@ -72,7 +72,12 @@ EXECMAIN=$(wildcard cmd/*/main.go)
 EXECDIRS=$(sort $(dir $(EXECMAIN)))
 EXECS=$(patsubst cmd/%/,$(BIN)/%,$(EXECDIRS))
 SPECIAL_EXECS=$(BIN)/rune $(BIN)/rune-agent
-GENERIC_EXECS=$(filter-out $(SPECIAL_EXECS),$(EXECS))
+# Language extensions ship as cgo-free binaries so one build runs on every
+# supported glibc and macOS release. These link C libraries and are exempt:
+# fuzzy search parses with tree-sitter, rtc captures audio and video.
+CGO_EXTENSIONS=$(BIN)/extension_fuzzy_search $(BIN)/extension_rtc
+NOCGO_EXTENSIONS=$(filter-out $(CGO_EXTENSIONS),$(filter $(BIN)/extension_%,$(EXECS)))
+GENERIC_EXECS=$(filter-out $(SPECIAL_EXECS) $(NOCGO_EXTENSIONS),$(EXECS))
 EXEC_PKGS=$(patsubst $(BIN)/%,./cmd/%,$(EXECS))
 RELEASE_EXEC_PKGS=$(EXEC_PKGS)
 GOMOCKS=$(wildcard **/**/*_gomock.go) $(wildcard **/*_gomock.go)
@@ -288,6 +293,11 @@ $(BIN)/rune-agent: $(EXECSRC) $(LIBSRC) $(BIN)
 
 $(GENERIC_EXECS): $(EXECSRC) $(LIBSRC) $(BIN)
 	cd $(patsubst bin/%,cmd/%,$@) && $(CGO_ENABLED) $(GO) build $(GOFLAGS) -o ../../$@
+
+# The race detector of debug builds requires cgo on Linux.
+$(NOCGO_EXTENSIONS): $(EXECSRC) $(LIBSRC) $(BIN)
+	cd $(patsubst bin/%,cmd/%,$@) && CGO_ENABLED=$(if $(RACE_FLAG),1,0) $(GO) build $(GOFLAGS) -o ../../$@ \
+		$(if $(RACE_FLAG),,|| { echo "$@ failed to build with CGO_ENABLED=0; if it needs C libraries, add it to CGO_EXTENSIONS in the Makefile" >&2; exit 1; })
 
 $(BIN)/runectl: $(BIN)
 	@GOBIN="`pwd`/$(BIN)" $(GO) install github.com/unstablebuild/rune-go-sdk/cmd/runectl
