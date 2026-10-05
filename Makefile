@@ -106,9 +106,9 @@ EXECDIRS=$(sort $(dir $(EXECMAIN)))
 EXECS=$(patsubst cmd/%/,$(BIN)/%,$(EXECDIRS))
 SPECIAL_EXECS=$(BIN)/rune
 # Language extensions and rune-agent ship as cgo-free binaries so one build runs on
-# every supported glibc and macOS release. These link C libraries and are exempt:
-# fuzzy search parses with tree-sitter, rtc captures audio and video.
-CGO_EXECS=$(BIN)/extension_fuzzy_search $(BIN)/extension_rtc
+# every supported glibc and macOS release. rtc links C libraries to capture audio and
+# video, so it is exempt.
+CGO_EXECS=$(BIN)/extension_rtc
 NOCGO_EXECS=$(filter-out $(CGO_EXECS),$(filter $(BIN)/extension_% $(BIN)/rune-agent,$(EXECS)))
 NOCGO_ENABLED=$(if $(RACE_FLAG),1,0)
 NOCGO_NOTE=$(if $(RACE_FLAG),,cgo off)
@@ -602,7 +602,6 @@ rune-agent-prod-dist-all rune-agent-staging-dist-all:
 	@$(MAKE) $(@:%-all=%)-darwin-amd64
 	@$(MAKE) $(@:%-all=%)-darwin-arm64
 
-fuzzy-search: CGO_ENABLED=CGO_ENABLED=1
 fuzzy-search: $(BIN)/extension_fuzzy_search
 
 fuzzy-search-pkg:
