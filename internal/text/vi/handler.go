@@ -2128,7 +2128,10 @@ func (vi *viHandlerImpl) handleMetaNormal(ev term.Event) (quit, handled, done bo
 		case 'b', 'B':
 			if before.Y > after.Y {
 				vi.cursor.MoveLeftStartWord()
+				after = vi.cursor.CursorAtScroll()
 			}
+			// b is exclusive, so the character under the cursor survives.
+			vi.cursor.SelectRange(after, before)
 		default:
 			if before.Y != after.Y {
 				vi.cursor.SelectLine()

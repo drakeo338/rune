@@ -1602,8 +1602,8 @@ func TestViCaseChangeOperators(t *testing.T) {
 		{"gu$ lowercases to end of line", "Hello WORLD", "gu$", "hello world", normalMode},
 		{"gue lowercases to end of word", "HELLO World", "gue", "hello World", normalMode},
 		{"guu lowercases whole line", "HELLO WORLD", "guu", "hello world", normalMode},
-		{"gub lowercases backward word", "Hello WORLD", "Wgub", "hello wORLD", normalMode},
-		{"guB lowercases backward WORD", "Hello-Two WORLD", "WguB", "hello-two wORLD", normalMode},
+		{"gub lowercases backward word", "Hello WORLD", "Wgub", "hello WORLD", normalMode},
+		{"guB lowercases backward WORD", "Hello-Two WORLD", "WguB", "hello-two WORLD", normalMode},
 		{"guW lowercases forward WORD", "Hello-World test", "guW", "hello-world test", normalMode},
 		{"guE lowercases to end of WORD", "Hello-World test", "guE", "hello-world test", normalMode},
 		{"gu^ lowercases to first non-blank", "  Hello WORLD", "WWgu^", "  hello wORLD", normalMode},
@@ -1618,8 +1618,8 @@ func TestViCaseChangeOperators(t *testing.T) {
 		{"gU$ uppercases to end of line", "hello world", "gU$", "HELLO WORLD", normalMode},
 		{"gUe uppercases to end of word", "hello world", "gUe", "HELLO world", normalMode},
 		{"gUU uppercases whole line", "hello world", "gUU", "HELLO WORLD", normalMode},
-		{"gUb uppercases backward word", "hello world", "WgUb", "HELLO World", normalMode},
-		{"gUB uppercases backward WORD", "hello-two world", "WgUB", "HELLO-TWO World", normalMode},
+		{"gUb uppercases backward word", "hello world", "WgUb", "HELLO world", normalMode},
+		{"gUB uppercases backward WORD", "hello-two world", "WgUB", "HELLO-TWO world", normalMode},
 		{"gUW uppercases forward WORD", "hello-world test", "gUW", "HELLO-WORLD test", normalMode},
 		{"gUE uppercases to end of WORD", "hello-world test", "gUE", "HELLO-WORLD test", normalMode},
 		{"gU^ uppercases to first non-blank", "  hello world", "fogU^", "  HELLO world", normalMode},
@@ -1634,7 +1634,7 @@ func TestViCaseChangeOperators(t *testing.T) {
 		{"g~$ toggles case to end of line", "Hello World", "g~$", "hELLO wORLD", normalMode},
 		{"g~e toggles case to end of word", "Hello World", "g~e", "hELLO World", normalMode},
 		{"g~~ toggles case of whole line", "Hello World", "g~~", "hELLO wORLD", normalMode},
-		{"g~b toggles backward word", "Hello World", "Wg~b", "hELLO world", normalMode},
+		{"g~b toggles backward word", "Hello World", "Wg~b", "hELLO World", normalMode},
 		{"g~W toggles forward WORD", "Hello-World Test", "g~W", "hELLO-wORLD Test", normalMode},
 		{"g~E toggles to end of WORD", "Hello-World Test", "g~E", "hELLO-wORLD Test", normalMode},
 		{"g~l toggles single char", "Hello World", "g~l", "hEllo World", normalMode},
@@ -12635,4 +12635,32 @@ func TestHandleMouseWindowCoordinates(t *testing.T) {
 
 func mouseEventAt(key term.Key, x, y int) term.Event {
 	return term.Event{Type: term.EventMouse, Key: key, MouseX: x, MouseY: y}
+}
+
+func TestViOperatorLeftStartWordKeepsCharUnderCursor(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		content  string
+		at       term.Coordinates
+		seq      string
+		want     string
+		wantMode viMode
+	}{
+		{"delete b", "one two three", term.Coordinates{X: 8}, "db", "one three", normalMode},
+		{"delete B", "one two-x three", term.Coordinates{X: 10}, "dB", "one three", normalMode},
+		{"change b", "one two three", term.Coordinates{X: 8}, "cb", "one three", insertMode},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			vi := setupVi(t, tc.content, 2)
+			vi.Resize(80, 10)
+			vi.setCursorAtScroll(tc.at)
+			vi.Draw(term.NoopWriter{})
+			for _, ch := range tc.seq {
+				_, handled := vi.Handle(term.Event{Type: term.EventKey, Ch: ch})
+				require.True(t, handled)
+			}
+			assert.Equal(t, tc.want, strings.TrimRight(vi.less.Buffer().String(), "\n"))
+			assert.Equal(t, tc.wantMode, vi.mode())
+		})
+	}
 }
