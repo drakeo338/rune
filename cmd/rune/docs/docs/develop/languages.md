@@ -562,15 +562,15 @@ adapter: set a breakpoint, launch a program, inspect stack frames and variables,
 and attach to an existing process when the adapter supports it.
 
 If the language supports debugging, add
-`internal/ide/ideshell/debugshell/<file-id>_test.go` and a deterministic program
-under `internal/ide/ideshell/debugshell/testdata/`. The test must use Rune's real
+`internal/ide/console/ideconsole/debugshell/<file-id>_test.go` and a deterministic program
+under `internal/ide/console/ideconsole/debugshell/testdata/`. The test must use Rune's real
 Debugger Manager, the supported debug adapter, the real compiler or interpreter,
 and the language's real syntax assets. Follow the
-[Go](https://github.com/unstablebuild/rune/blob/main/internal/ide/ideshell/debugshell/go_test.go),
-[Python](https://github.com/unstablebuild/rune/blob/main/internal/ide/ideshell/debugshell/py_test.go),
-[Rust](https://github.com/unstablebuild/rune/blob/main/internal/ide/ideshell/debugshell/rs_test.go),
+[Go](https://github.com/unstablebuild/rune/blob/main/internal/ide/console/ideconsole/debugshell/go_test.go),
+[Python](https://github.com/unstablebuild/rune/blob/main/internal/ide/console/ideconsole/debugshell/py_test.go),
+[Rust](https://github.com/unstablebuild/rune/blob/main/internal/ide/console/ideconsole/debugshell/rs_test.go),
 and
-[Zig](https://github.com/unstablebuild/rune/blob/main/internal/ide/ideshell/debugshell/zig_test.go)
+[Zig](https://github.com/unstablebuild/rune/blob/main/internal/ide/console/ideconsole/debugshell/zig_test.go)
 suites. These tests belong behind the `e2e` build tag because they launch real
 tools and speak the Debug Adapter Protocol through Rune's production path.
 
@@ -717,7 +717,7 @@ Each suite protects a different boundary:
 | `internal/ide/idelsp/<file-id>_test.go` | Rune can initialize and use the real supported LSP server, including the capabilities and server-specific options the extension advertises. | A buildable project in `internal/ide/idelsp/testdata/`. |
 | `internal/ide/syntax/syntaxtest/<file-id>_test.go` | Rune can load the real native grammar and packaged `.scm` queries and use them for highlighting, indentation, folds, definitions, references, scopes, and incremental edits. | A package-shaped syntax fixture plus representative valid and incomplete source. |
 | `internal/ide/idelsp/symbolresolve/<file-id>_test.go` | Rune's own indexer understands the language's modules, imports, aliases, methods, visibility, ambiguity, and re-exports. | A real multi-file project in `symbolresolve/testdata_<file-id>/`. |
-| `internal/ide/ideshell/debugshell/<file-id>_test.go` | Rune can launch or attach through the real debug adapter, set breakpoints, stop, inspect stack frames and variables, continue, and terminate. Required when debugging is supported. | A deterministic executable project in `debugshell/testdata/`. |
+| `internal/ide/console/ideconsole/debugshell/<file-id>_test.go` | Rune can launch or attach through the real debug adapter, set breakpoints, stop, inspect stack frames and variables, continue, and terminate. Required when debugging is supported. | A deterministic executable project in `debugshell/testdata/`. |
 
 The extension should also retain its own end-to-end suite, such as
 [Python's `cmd/extension_python/e2e_test.go`](https://github.com/unstablebuild/rune/blob/main/cmd/extension_python/e2e_test.go).

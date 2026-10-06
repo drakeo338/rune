@@ -58,7 +58,7 @@ import (
 	"unstable.build/rune/internal/ide"
 	"unstable.build/rune/internal/ide/idepkg"
 	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/llm/llmrpc"
 	"unstable.build/rune/internal/rpc"
 	"unstable.build/rune/internal/term/gui"

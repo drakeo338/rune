@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 	"unstable.build/rune/internal/ide"
 	"unstable.build/rune/internal/ide/idepkg"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 )
 
 // newHostPackageManager builds the manager a host with no editor of

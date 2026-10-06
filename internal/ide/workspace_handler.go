@@ -64,6 +64,10 @@ import (
 	"unstable.build/rune/internal/handler/command"
 	handlermarkdown "unstable.build/rune/internal/handler/markdown"
 	"unstable.build/rune/internal/handler/search"
+	"unstable.build/rune/internal/ide/console/ideconsole/debugshell"
+	"unstable.build/rune/internal/ide/console/ideconsole/workspaceshell"
+	"unstable.build/rune/internal/ide/console/llmconsole"
+	"unstable.build/rune/internal/ide/console/pkgconsole"
 	"unstable.build/rune/internal/ide/ideauthorizer"
 	"unstable.build/rune/internal/ide/idecursor"
 	"unstable.build/rune/internal/ide/idedebug"
@@ -74,12 +78,8 @@ import (
 	"unstable.build/rune/internal/ide/idenotice"
 	"unstable.build/rune/internal/ide/idepkg"
 	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/ide/idescavenger"
-	"unstable.build/rune/internal/ide/ideshell/debugshell"
-	"unstable.build/rune/internal/ide/ideshell/workspaceshell"
-	"unstable.build/rune/internal/ide/llmshell"
-	"unstable.build/rune/internal/ide/pkgshell"
-	"unstable.build/rune/internal/ide/pkgtrust"
 	"unstable.build/rune/internal/ide/syntax/symboldb"
 	"unstable.build/rune/internal/ide/syntax/treesitter"
 	"unstable.build/rune/internal/ide/vctrl"
@@ -2242,11 +2242,11 @@ func (h *workspaceManagerHandler) buildExtensions(
 	// Language servers and debuggers run on the workspace host, so the
 	// packages they need are installed there.
 	var pkgs idelsp.PkgManager = h.pkgmanager
-	pkgshellCfg := pkgshell.Config{Manager: h.pkgmanager.pkg}
+	pkgshellCfg := pkgconsole.Config{Manager: h.pkgmanager.pkg}
 	hostPkgs := h.hostPackageManager(cfg, uri, cwd, notifications)
 	if hostPkgs != nil {
 		pkgs = hostPkgs
-		pkgshellCfg = pkgshell.Config{Manager: hostPkgs.pm, Host: hostPkgs.host}
+		pkgshellCfg = pkgconsole.Config{Manager: hostPkgs.pm, Host: hostPkgs.host}
 		defer func() {
 			if retErr != nil {
 				_ = hostPkgs.Close()
@@ -2384,9 +2384,9 @@ func (h *workspaceManagerHandler) buildExtensions(
 	res = extension.MergeResourceMap(res,
 		extension.PackagesResources(extensionPackages{pkgs: pkgs}))
 
-	// Register the top-level `models` REPL command. The llmshell
+	// Register the top-level `models` REPL command. The llmconsole
 	// reads the local llama.cpp registry directly off the router.
-	llmHandler := llmshell.New(llmshell.Config{
+	llmHandler := llmconsole.New(llmconsole.Config{
 		Service:          h.llmRouter,
 		LocalRegistry:    h.llmRouter.LocalRegistry(),
 		Storage:          h.storage,
@@ -2396,13 +2396,13 @@ func (h *workspaceManagerHandler) buildExtensions(
 		ScheduleNextTick: cfg.scheduleNextTick,
 		PromptOpener:     &ex.comp,
 	})
-	if err := ex.editorObserver.RegisterREPLCommand(llmshell.Manual(), llmHandler); err != nil {
+	if err := ex.editorObserver.RegisterREPLCommand(llmconsole.Manual(), llmHandler); err != nil {
 		log.Errorf("register llm repl command: %v", err)
 	}
 
 	// Register the top-level `pkg` REPL command for package management.
-	pkgHandler := pkgshell.New(pkgshellCfg)
-	if err := ex.editorObserver.RegisterREPLCommand(pkgshell.Manual(), pkgHandler); err != nil {
+	pkgHandler := pkgconsole.New(pkgshellCfg)
+	if err := ex.editorObserver.RegisterREPLCommand(pkgconsole.Manual(), pkgHandler); err != nil {
 		log.Errorf("register pkg repl command: %v", err)
 	}
 

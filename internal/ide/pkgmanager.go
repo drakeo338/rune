@@ -37,12 +37,12 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/term"
 	"unstable.build/rune/auth"
 	"unstable.build/rune/internal/debug"
-	"unstable.build/rune/internal/ide/gitpkg"
 	"unstable.build/rune/internal/ide/idelsp"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/gitpkg"
+	"unstable.build/rune/internal/ide/idepkg/multipkg"
 	"unstable.build/rune/internal/ide/idepkg/pkgrpc"
-	"unstable.build/rune/internal/ide/multipkg"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/text"
 )
 

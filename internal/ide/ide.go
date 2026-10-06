@@ -50,7 +50,7 @@ import (
 	"unstable.build/rune/internal/handler/command"
 	"unstable.build/rune/internal/ide/idenag"
 	"unstable.build/rune/internal/ide/idepkg"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/text"
 	"unstable.build/rune/internal/workspace"
 	"unstable.build/rune/internal/workspace/workspacessh"

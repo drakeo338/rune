@@ -36,7 +36,7 @@ import (
 
 	"unstable.build/rune/internal/ide"
 	"unstable.build/rune/internal/ide/idepkg"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/ide/starlarkconfig"
 )
 

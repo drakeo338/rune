@@ -56,7 +56,7 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/tui"
 	"gopkg.in/yaml.v3"
 	"unstable.build/rune/internal/ide/idepkg/idepkgtest"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/ide/starlarkconfig"
 	"unstable.build/rune/internal/localstorage"
 	"unstable.build/rune/internal/localstorage/bluestore"

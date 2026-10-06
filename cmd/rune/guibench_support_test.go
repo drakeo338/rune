@@ -41,7 +41,7 @@ import (
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/ide"
 	"unstable.build/rune/internal/ide/idelsp/languages"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/ide/syntax"
 	"unstable.build/rune/internal/ide/syntax/grammarfixture"
 	"unstable.build/rune/internal/ide/syntax/treesitter"

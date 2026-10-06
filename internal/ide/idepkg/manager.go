@@ -50,8 +50,8 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/term"
 	"gopkg.in/yaml.v3"
 	"unstable.build/rune/internal/debug"
-	"unstable.build/rune/internal/ide/gitpkg"
-	"unstable.build/rune/internal/ide/pkgtrust"
+	"unstable.build/rune/internal/ide/idepkg/gitpkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/ide/starlarkconfig"
 	"unstable.build/rune/internal/workspace/walkdir"
 )

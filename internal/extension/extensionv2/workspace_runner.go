@@ -44,7 +44,7 @@ import (
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/extension"
 	"unstable.build/rune/internal/ide/ideauthorizer"
-	"unstable.build/rune/internal/procattr"
+	"unstable.build/rune/internal/ide/procattr"
 	"unstable.build/rune/internal/workspace"
 	"unstable.build/rune/internal/workspace/processctx"
 )

@@ -43,9 +43,9 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/term"
 	"unstable.build/rune/auth"
 	"unstable.build/rune/internal/handler/handlertest"
+	"unstable.build/rune/internal/ide/console/pkgconsole"
 	"unstable.build/rune/internal/ide/idepkg"
 	"unstable.build/rune/internal/ide/idepkg/idepkgtest"
-	"unstable.build/rune/internal/ide/pkgshell"
 	"unstable.build/rune/internal/localstorage"
 	"unstable.build/rune/internal/text"
 	"unstable.build/rune/internal/workspace"
@@ -168,9 +168,9 @@ func TestPkgManager_HandlePkgInstall_NotAuthenticated(t *testing.T) {
 	m := newTestWorkspaceManagerHandlerForPkgManager(t, rm, false, 0)
 	defer m.Close()
 
-	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
 	_, err := h.HandleCommand(context.Background(), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", "go"},
 	}, repl.NopProgressWriter())
 	require.ErrorIs(t, err, auth.ErrNotAuthenticated)
@@ -189,9 +189,9 @@ func TestPkgManager_HandlePkgInstall_Forbidden(t *testing.T) {
 	m := newTestWorkspaceManagerHandlerForPkgManager(t, rm, false, 0)
 	defer m.Close()
 
-	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
 	_, err := h.HandleCommand(context.Background(), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", "go"},
 	}, repl.NopProgressWriter())
 	require.ErrorIs(t, err, idepkg.ErrForbidden)
@@ -210,8 +210,8 @@ func TestPkgManager_CompletePkgInstall_Forbidden(t *testing.T) {
 	m := newTestWorkspaceManagerHandlerForPkgManager(t, rm, false, 0)
 	defer m.Close()
 
-	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
-	_, err := h.Complete(context.Background(), pkgshell.CommandName,
+	h := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
+	_, err := h.Complete(context.Background(), pkgconsole.CommandName,
 		[]string{"install", ""})
 	require.ErrorIs(t, err, idepkg.ErrForbidden)
 }
@@ -227,9 +227,9 @@ func TestPkgManager_HandlePkgInstall_Forbidden_Integration(t *testing.T) {
 	m := newTestWorkspaceManagerHandlerForPkgManager(t, rm, false, 0)
 	defer m.Close()
 
-	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
 	_, err := h.HandleCommand(context.Background(), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", "go"},
 	}, repl.NopProgressWriter())
 	require.ErrorIs(t, err, idepkg.ErrForbidden)
@@ -619,8 +619,8 @@ func TestSetReleaseManager(t *testing.T) {
 	m := newTestWorkspaceManagerHandlerForPkgManager(t, rm, false, 0)
 
 	// Before the second release manager is set, there are no packages.
-	h0 := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
-	it0, err := h0.Complete(context.Background(), pkgshell.CommandName,
+	h0 := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
+	it0, err := h0.Complete(context.Background(), pkgconsole.CommandName,
 		[]string{"install", ""})
 	require.NoError(t, err)
 	names0, err := iterator.ToSlice(context.Background(), it0)
@@ -635,8 +635,8 @@ func TestSetReleaseManager(t *testing.T) {
 
 	// After re-setting the release manager, the new packages are
 	// reachable through a freshly constructed pkg shell.
-	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
-	it, err := h.Complete(context.Background(), pkgshell.CommandName,
+	h := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
+	it, err := h.Complete(context.Background(), pkgconsole.CommandName,
 		[]string{"install", ""})
 	require.NoError(t, err)
 	names, err := iterator.ToSlice(context.Background(), it)

@@ -26,9 +26,9 @@ import (
 	"github.com/unstablebuild/rune-go-sdk/api/schemeapi"
 	"github.com/unstablebuild/rune-go-sdk/api/workspaceapi"
 	"unstable.build/rune/internal/ide"
-	"unstable.build/rune/internal/ide/gitpkg"
 	"unstable.build/rune/internal/ide/idepkg"
-	"unstable.build/rune/internal/ide/multipkg"
+	"unstable.build/rune/internal/ide/idepkg/gitpkg"
+	"unstable.build/rune/internal/ide/idepkg/multipkg"
 	"unstable.build/rune/internal/workspace"
 )
 
