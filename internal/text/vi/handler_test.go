@@ -2574,6 +2574,11 @@ func TestViCountedOperatorScenarios(t *testing.T) {
 		{name: "wrap d2fx deletes through second x", content: "ax bx cx", seq: "d2fx", wrap: true, width: 4, wantContent: " cx", wantScroll: coord(0, 0)},
 		{name: "dfw finds w instead of moving by word", content: "one two wow", seq: "dfw", wantContent: "o wow", wantScroll: coord(0, 0)},
 		{name: "dtw stops before w instead of moving by word", content: "one two wow", seq: "dtw", wantContent: "wo wow", wantScroll: coord(0, 0)},
+		{name: "dfb finds b instead of moving back by word", content: "one bob two", seq: "dfb", wantContent: "ob two", wantScroll: coord(0, 0)},
+		{name: "dtb stops before b instead of moving back by word", content: "one bob two", seq: "dtb", wantContent: "bob two", wantScroll: coord(0, 0)},
+		{name: "dFb finds b backward (cursor char at line end included) instead of moving back by word", content: "bob one", seq: "$dFb", wantContent: "bo", wantScroll: coord(1, 0)},
+		{name: "dTb stops after b instead of moving back by word", content: "bob one", seq: "$dTb", wantContent: "bob", wantScroll: coord(2, 0)},
+		{name: "dfB finds B instead of moving back by word", content: "one Bob two", seq: "dfB", wantContent: "ob two", wantScroll: coord(0, 0)},
 
 		// Counted word operators across empty lines: the last word stops at its
 		// line end, and an end in column 0 is pulled back to the previous line.
