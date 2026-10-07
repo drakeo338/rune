@@ -47,10 +47,10 @@ import (
 	"unstable.build/rune/internal/browser"
 	"unstable.build/rune/internal/extension"
 	"unstable.build/rune/internal/extension/extensionv2"
+	"unstable.build/rune/internal/ide/console/pkgconsole"
 	"unstable.build/rune/internal/ide/ideauthorizer"
 	"unstable.build/rune/internal/ide/idepkg"
 	"unstable.build/rune/internal/ide/idepkg/idepkgtest"
-	"unstable.build/rune/internal/ide/pkgshell"
 	"unstable.build/rune/internal/localstorage"
 	"unstable.build/rune/internal/text"
 	"unstable.build/rune/internal/workspace"
@@ -367,9 +367,9 @@ func TestPkgInstallStartsExtensionWithPackageEnv(t *testing.T) {
 	require.NoError(t, m.addWorkspace(wsURI, true, false, -1))
 	m.quiesce()
 
-	h := pkgshell.New(pkgshell.Config{Manager: m.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: m.pkgmanager.pkg})
 	_, err = h.HandleCommand(context.Background(), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", pkgID},
 	}, repl.NopProgressWriter())
 	require.NoError(t, err)
@@ -454,10 +454,10 @@ func TestPkgInstallRegistersTutorialLive(t *testing.T) {
 		"tutorial must not be registered before install")
 
 	ui := recordingPkgUI{Notifications: idepkgtest.NewNotifications(t), t: t}
-	h := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	mu.Lock()
 	_, err = h.HandleCommand(idepkg.WithUI(context.Background(), ui), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", pkgID},
 	}, repl.NopProgressWriter())
 	mu.Unlock()
@@ -545,10 +545,10 @@ func TestPkgInstallMultipleTutorialsPromptsOnce(t *testing.T) {
 	require.Equal(t, 0, countFloatingWindows(i, mu),
 		"no prompt should be open before install")
 
-	h := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	mu.Lock()
 	_, err = h.HandleCommand(context.Background(), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", pkgID},
 	}, repl.NopProgressWriter())
 	mu.Unlock()
@@ -619,10 +619,10 @@ func TestPkgInstallTutorialDoesNotPromptDuringActiveTutorial(t *testing.T) {
 	}, 10*time.Second, 20*time.Millisecond,
 		"the basics tutorial should be running before install")
 
-	h := pkgshell.New(pkgshell.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
+	h := pkgconsole.New(pkgconsole.Config{Manager: i.workspaceHandler.pkgmanager.pkg})
 	mu.Lock()
 	_, err = h.HandleCommand(context.Background(), repl.Command{
-		Name: pkgshell.CommandName,
+		Name: pkgconsole.CommandName,
 		Args: []string{"install", pkgID},
 	}, repl.NopProgressWriter())
 	mu.Unlock()

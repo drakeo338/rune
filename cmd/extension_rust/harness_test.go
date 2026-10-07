@@ -709,7 +709,7 @@ func runRustExtensionOnDir(t *testing.T, dir, rustupHome, cargoHome string) rust
 		nil,
 		nil,
 		nil,
-		&langexttest.Installer{},
+		&langexttest.Installer{Files: []string{findRustAnalyzer(t)}},
 		rustupHome, cargoHome, nil,
 		func(m textapi.CommandManual, _ textapi.REPLHandler) error {
 			env.manuals = append(env.manuals, m)

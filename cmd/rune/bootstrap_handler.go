@@ -44,10 +44,11 @@ import (
 	"unstable.build/rune/internal/browser"
 	"unstable.build/rune/internal/debug"
 	"unstable.build/rune/internal/ide"
+	"unstable.build/rune/internal/ide/hostenv"
 	"unstable.build/rune/internal/ide/idepkg"
+	"unstable.build/rune/internal/ide/idepkg/pkgtrust"
 	"unstable.build/rune/internal/ide/ideupgrade"
 	"unstable.build/rune/internal/ide/keymeta"
-	"unstable.build/rune/internal/ide/pkgtrust"
 	"unstable.build/rune/internal/term/gui"
 	"unstable.build/rune/internal/term/gui/appmenu"
 	"unstable.build/rune/internal/term/gui/glassbar"
@@ -65,6 +66,7 @@ type bootstrapHandler struct {
 	configPath        string
 	workspace         string
 	shellRCDir        string
+	host              *hostenv.Host
 	filenames         []string
 	launchCmd         []string
 	runner            ide.ExtensionsRunner
@@ -110,6 +112,7 @@ type bootstrapHandler struct {
 
 func newBootstrapHandler(
 	dataDir, configPath, workspace, shellRCDir string,
+	host *hostenv.Host,
 	filenames, launchCmd []string,
 	runner ide.ExtensionsRunner,
 	mu *sync.Mutex,
@@ -128,6 +131,7 @@ func newBootstrapHandler(
 		configPath:       configPath,
 		workspace:        workspace,
 		shellRCDir:       shellRCDir,
+		host:             host,
 		filenames:        filenames,
 		launchCmd:        launchCmd,
 		runner:           runner,
@@ -198,6 +202,7 @@ func (b *bootstrapHandler) buildPreIDE() (*ide.IDE, error) {
 		ide.WithScheduleNextTick(b.scheduleNextTick),
 		ide.WithCellPixelSize(b.cellPixelSize),
 		ide.WithShellRCDir(b.shellRCDir),
+		ide.WithHostDataDir(b.dataDir),
 		ide.WithTabsClickCallback(b.handleTabsClick),
 		ide.WithClipboard(b.clip),
 	}
@@ -237,6 +242,7 @@ func (b *bootstrapHandler) buildConfiguredIDE(
 		ide.WithScheduleNextTick(b.scheduleNextTick),
 		ide.WithCellPixelSize(b.cellPixelSize),
 		ide.WithShellRCDir(b.shellRCDir),
+		ide.WithHostDataDir(b.dataDir),
 		ide.WithScheme(docsScheme, newDocsSchemeFunc(b.configPath)),
 		ide.WithTabsClickCallback(b.handleTabsClick),
 		ide.WithPackageConfigMergeHook(b.packageConfigMergeHook),
@@ -442,7 +448,7 @@ func (b *bootstrapHandler) guiEnvLiveApplyHook(
 	}
 	if env, err := getGUIEnvVars(guiCfg); err != nil {
 		return idepkg.ConfigMergeResult{}, fmt.Errorf("decode gui.env: %w", err)
-	} else if err := applyGUIEnvVars(env); err != nil {
+	} else if err := b.host.Apply(env); err != nil {
 		return idepkg.ConfigMergeResult{}, fmt.Errorf("apply gui.env: %w", err)
 	}
 	return idepkg.ConfigMergeResult{LivePaths: [][]string{{"gui", "env"}}}, nil
