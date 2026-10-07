@@ -19,7 +19,6 @@ package dialoguetui
 import (
 	"time"
 
-	"github.com/unstablebuild/rune-go-sdk/api/browserapi"
 	"github.com/unstablebuild/rune-go-sdk/clipboard"
 	"github.com/unstablebuild/rune-go-sdk/component"
 	"github.com/unstablebuild/rune-go-sdk/term"
@@ -170,12 +169,10 @@ type ComponentConfig struct {
 
 	// Clipboard, when non-nil, enables MarkdownConfig.CodeBlockCopy for
 	// transcript code blocks; clicking the icon copies the block's source
-	// to the default register. The icon is only drawn when
-	// MarkdownConfig.CodeBlockPadding has room for it.
+	// to the default register and swaps the icon for
+	// MarkdownConfig.CodeBlockCopiedIcon until the pointer leaves it. The
+	// icon is only drawn when MarkdownConfig.CodeBlockPadding has room for it.
 	Clipboard clipboard.Register
-	// Notifications confirms a successful code block copy. It is required
-	// when Clipboard is set.
-	Notifications browserapi.Notifications
 
 	// DurationPrecision, when positive, truncates tool call durations
 	// to this precision (e.g. time.Second shows "1s" instead of "1.234s").

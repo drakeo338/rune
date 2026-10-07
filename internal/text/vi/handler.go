@@ -2131,8 +2131,14 @@ func (vi *viHandlerImpl) handleMetaNormal(ev term.Event) (quit, handled, done bo
 				vi.selectWordOperatorRange(before, after, count, ev.Ch == 'W')
 			}
 		case 'b', 'B':
-			if before.Y > after.Y {
-				vi.cursor.MoveLeftStartWord()
+			// After f/t/F/T, b is the character to find, not a word motion.
+			if prevMode == moveNone {
+				if before.Y > after.Y {
+					vi.cursor.MoveLeftStartWord()
+					after = vi.cursor.CursorAtScroll()
+				}
+				// b is exclusive, so the character under the cursor survives.
+				vi.cursor.SelectRange(after, before)
 			}
 		default:
 			if before.Y != after.Y {

@@ -153,7 +153,7 @@ RELEASE_FILES=$(wildcard release/*)
 	rune-release-linux-amd64 rune-release-linux-arm64 \
 	rune-release-linux-amd64-native rune-release-linux-arm64-native \
 	rune-release-linux-amd64-cross rune-release-linux-arm64-cross \
-	rune-docker-build rune-docker-push \
+	rune-docker-build rune-docker-build-staging rune-docker-push \
 	rune-prod-dist-linux-amd64 rune-prod-dist-linux-arm64 \
 	rune-prod-dist-linux-amd64-native rune-prod-dist-linux-arm64-native \
 	rune-prod-dist-linux-amd64-cross rune-prod-dist-linux-arm64-cross \
@@ -397,8 +397,13 @@ rune-release-linux-arm64-cross:
 # rune-docker-build builds the headless node image (deploy/rune-headless)
 # for the host arch into the local image store; rune-docker-push publishes
 # it for every arch to Docker Hub as the release tag and latest.
+# rune-docker-build-staging builds the same image against the staging
+# endpoints.
 rune-docker-build:
 	@$(MAKE) -C cmd/rune docker-build
+
+rune-docker-build-staging:
+	@$(MAKE) -C cmd/rune docker-build-staging
 
 rune-docker-push:
 	@$(MAKE) -C cmd/rune docker-push
