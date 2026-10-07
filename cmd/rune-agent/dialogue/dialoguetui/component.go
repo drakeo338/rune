@@ -698,6 +698,14 @@ func (c *Component) hoverCodeCopy(pos term.Coordinates) (changed bool) {
 	return changed
 }
 
+// markCodeCopied shows the copied icon in place of the copy icon at pos,
+// in messages content coordinates.
+func (c *Component) markCodeCopied(pos term.Coordinates) {
+	c.eachTranscriptMarkdown(func(md *markdown.Component, origin term.Coordinates) {
+		md.MarkCodeBlockCopied(term.CoordinatesDiff(pos, origin))
+	})
+}
+
 // eraseCodeCopyIcons blanks the copy icons in w, a render of the whole
 // messages list in content coordinates, so text selected across a code
 // block does not pick them up.

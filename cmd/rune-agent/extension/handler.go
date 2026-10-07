@@ -624,9 +624,6 @@ func newCommandEventHandler(
 
 	ret.clip = text.NewSystemClipboard()
 	ret.cfg.Clipboard = ret.clip
-	// Copy confirmations are UI feedback, not agent events, so they skip
-	// the Notification hooks that wrap h.n.
-	ret.cfg.Notifications = noti
 
 	// Resolve the configured editor for composing messages. On error the
 	// compose editor stays nil and dialoguetui falls back to its inputbox.
